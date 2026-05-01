@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check src/app.js)",
+      "Bash(node --check src/index.js)",
+      "Bash(npm install *)"
+    ]
+  }
+}
