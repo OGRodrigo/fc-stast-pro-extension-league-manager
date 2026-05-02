@@ -5,32 +5,34 @@ const Club = require("../models/Club");
  */
 exports.createClub = async (req, res) => {
   try {
-    const { name, country } = req.body;
+    const { name, abbr, country, logo } = req.body;
 
-    if (!name) {
+    if (!name || !abbr) {
       return res.status(400).json({
-        message: "Nombre obligatorio.",
+        message: "Nombre y abreviación son obligatorios.",
       });
     }
 
     const club = await Club.create({
       name,
+      abbr,
       country,
+      logo,
       createdBy: req.admin._id,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Club creado correctamente.",
       club,
     });
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
-        message: "Ya existe un club con ese nombre.",
+        message: "Ya existe un club con ese nombre o abreviación.",
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Error creando club",
       error: error.message,
     });
@@ -52,22 +54,49 @@ exports.getClubs = async (req, res) => {
  * PATCH /clubs/:id
  */
 exports.updateClub = async (req, res) => {
-  const club = await Club.findOneAndUpdate(
-    {
-      _id: req.params.id,
-      createdBy: req.admin._id,
-    },
-    req.body,
-    { new: true }
-  );
+  try {
+    const updates = {};
 
-  if (!club) {
-    return res.status(404).json({
-      message: "Club no encontrado",
+    ["name", "abbr", "country", "logo"].forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    const club = await Club.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        createdBy: req.admin._id,
+      },
+      updates,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!club) {
+      return res.status(404).json({
+        message: "Club no encontrado",
+      });
+    }
+
+    return res.json({
+      message: "Club actualizado correctamente.",
+      club,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: "Ya existe un club con ese nombre o abreviación.",
+      });
+    }
+
+    return res.status(500).json({
+      message: "Error actualizando club",
+      error: error.message,
     });
   }
-
-  res.json({ club });
 };
 
 /**

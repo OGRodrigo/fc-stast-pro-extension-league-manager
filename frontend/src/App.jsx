@@ -11,6 +11,7 @@ import TournamentDetail from "./pages/TournamentDetail";
 import CreateMatch from "./pages/CreateMatch";
 import ImportMatchImage from "./pages/ImportMatchImage";
 import MatchDetail from "./pages/MatchDetail";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/tournaments/:id/matches/create" element={<CreateMatch />} />
             <Route path="/tournaments/:id/matches/import-image" element={<ImportMatchImage />} />
             <Route path="/tournaments/:id/matches/:matchId" element={<MatchDetail />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

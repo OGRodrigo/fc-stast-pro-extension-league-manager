@@ -8,6 +8,7 @@ const matchRoutes = require("./routes/match.routes");
 const tableRoutes = require("./routes/table.routes");
 
 
+
 const app = express();
 
 const allowedOrigins = (process.env.CLIENT_URL || "")
@@ -52,6 +53,7 @@ app.use("/auth", authRoutes);
 app.use("/tournaments", tournamentRoutes);
 app.use("/matches", matchRoutes);
 app.use("/table", tableRoutes);
+app.use("/", tournamentRoutes);
 app.use("/", clubRoutes);
 
 app.use((req, res) => {

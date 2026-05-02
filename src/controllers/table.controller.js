@@ -35,6 +35,7 @@ exports.getTournamentTable = async (req, res) => {
         club: {
           id: club._id,
           name: club.name,
+          abbr: club.abbr,
           country: club.country,
           logo: club.logo,
         },
@@ -53,6 +54,7 @@ exports.getTournamentTable = async (req, res) => {
       tournament: tournamentId,
       createdBy: req.admin._id,
       status: "played",
+      phase: "league",
     });
 
     matches.forEach((match) => {

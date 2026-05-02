@@ -35,6 +35,9 @@ exports.createMatch = async (req, res) => {
       status,
       source,
       clubStats,
+      phase,
+      round,
+      order,
     } = req.body;
 
     if (!homeClub || !awayClub || !date) {
@@ -97,6 +100,9 @@ exports.createMatch = async (req, res) => {
       status: status || "scheduled",
       source: source || "manual",
       clubStats: clubStats || {},
+      phase: phase || "league",
+      round: round ?? 1,
+      order: order ?? 0,
       createdBy: req.admin._id,
     });
 
@@ -160,7 +166,7 @@ exports.getTournamentMatches = async (req, res) => {
 exports.getMatchById = async (req, res) => {
   try {
     const match = await Match.findOne({
-      _id: req.params.id,
+      _id: req.params.tournamentId,
       createdBy: req.admin._id,
     })
       .populate("homeClub")
@@ -191,7 +197,7 @@ exports.getMatchById = async (req, res) => {
 exports.updateMatch = async (req, res) => {
   try {
     const match = await Match.findOne({
-      _id: req.params.id,
+      _id: req.params.tournamentId,
       createdBy: req.admin._id,
     });
 
@@ -219,6 +225,9 @@ exports.updateMatch = async (req, res) => {
       "status",
       "source",
       "clubStats",
+      "phase",
+      "round",
+      "order",
     ];
 
     allowedFields.forEach((field) => {
@@ -281,6 +290,34 @@ exports.updateMatch = async (req, res) => {
     });
   }
 };
+
+/**
+ * GET /tournaments/:id/matches
+ * Obtener todos los partidos de un torneo
+ */
+exports.getMatchesByTournament = async (req, res) => {
+  try {
+    const { tournamentId } = req.params;
+
+    const matches = await Match.find({
+      tournament: tournamentId,
+      createdBy: req.admin._id,
+    })
+      .populate("homeClub", "name abbr logo")
+      .populate("awayClub", "name abbr logo")
+      .sort({ date: 1 });
+
+    return res.json({
+      matches,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Error obteniendo partidos del torneo",
+      error: error.message,
+    });
+  }
+};
+
 
 /**
  * DELETE /matches/:id

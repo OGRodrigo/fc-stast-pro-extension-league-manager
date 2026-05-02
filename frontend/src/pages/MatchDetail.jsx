@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { matchesApi, tournamentsApi } from "../api";
-import { Modal, ModalActions } from "./Clubs";
+import { Modal, ModalActions } from "../components/ui/Modal";
 
 const MATCH_STATUS_BADGE = { scheduled: "badge-scheduled", played: "badge-played" };
 const MATCH_STATUS_LABELS = { scheduled: "Programado", played: "Jugado" };

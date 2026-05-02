@@ -71,31 +71,7 @@ export default function MainLayout() {
                 e.currentTarget.style.display = "none";
               }}
             />
-            <div className="hidden sm:flex flex-col leading-none gap-0.5">
-              <span
-                style={{
-                  fontFamily: "var(--font-title)",
-                  fontSize: "0.6rem",
-                  letterSpacing: "0.28em",
-                  color: "var(--fifa-mute)",
-                  textTransform: "uppercase",
-                }}
-              >
-                FC Stats Pro
-              </span>
-              <span
-                style={{
-                  fontFamily: "var(--font-title)",
-                  fontSize: "1.5rem",
-                  letterSpacing: "0.12em",
-                  color: "var(--fifa-neon)",
-                  textTransform: "uppercase",
-                  lineHeight: 1,
-                }}
-              >
-                League Manager
-              </span>
-            </div>
+
           </div>
 
           {/* Admin info + logout */}

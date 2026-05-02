@@ -3,7 +3,9 @@
     "allow": [
       "Bash(node --check src/app.js)",
       "Bash(node --check src/index.js)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\darks\\\\OneDrive\\\\Escritorio\\\\fc-stats-pro-league-manager\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

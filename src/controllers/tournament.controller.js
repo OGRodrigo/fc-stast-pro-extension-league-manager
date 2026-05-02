@@ -7,33 +7,82 @@ const Club = require("../models/Club");
  */
 exports.createTournament = async (req, res) => {
   try {
-    const { name, type, season, status, pointsConfig } = req.body;
+    const {
+      name,
+      type,
+      format = "league",
+      season,
+      maxClubs,
+      hasPlayoffs = false,
+      playoffTeams = 0,
+      pointsConfig,
+    } = req.body;
 
-    if (!name || !type) {
+    if (!name || !type || !maxClubs) {
       return res.status(400).json({
-        message: "Nombre y tipo son obligatorios",
+        message: "name, type y maxClubs son obligatorios.",
+      });
+    }
+
+    if (!["league", "tournament"].includes(type)) {
+      return res.status(400).json({
+        message: "Tipo inválido. Usa 'league' o 'tournament'.",
+      });
+    }
+
+    if (!["league", "cup", "mixed"].includes(format)) {
+      return res.status(400).json({
+        message: "Formato inválido. Usa 'league', 'cup' o 'mixed'.",
+      });
+    }
+
+    if (Number(maxClubs) < 2) {
+      return res.status(400).json({
+        message: "Debe haber al menos 2 equipos.",
+      });
+    }
+
+    if (hasPlayoffs && Number(playoffTeams) < 2) {
+      return res.status(400).json({
+        message: "Si hay playoffs, deben clasificar al menos 2 equipos.",
+      });
+    }
+
+    if (hasPlayoffs && Number(playoffTeams) > Number(maxClubs)) {
+      return res.status(400).json({
+        message: "Los equipos de playoffs no pueden superar el máximo de equipos.",
       });
     }
 
     const tournament = await Tournament.create({
       name,
       type,
-      season,
-      ...(status && { status }),
-      ...(pointsConfig && { pointsConfig }),
+      format,
+      season: season || "2026",
+      maxClubs,
+      hasPlayoffs,
+      playoffTeams,
+      pointsConfig: {
+        win: pointsConfig?.win ?? 3,
+        draw: pointsConfig?.draw ?? 1,
+        loss: pointsConfig?.loss ?? 0,
+      },
       createdBy: req.admin._id,
     });
 
-    res.status(201).json({ tournament });
+    return res.status(201).json({
+      message: "Torneo/liga creado correctamente.",
+      tournament,
+    });
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
-        message: "Torneo duplicado",
+        message: "Ya existe un torneo/liga con ese nombre y temporada.",
       });
     }
 
-    res.status(500).json({
-      message: "Error creando torneo",
+    return res.status(500).json({
+      message: "Error creando torneo/liga.",
       error: error.message,
     });
   }
@@ -127,6 +176,12 @@ exports.addClubToTournament = async (req, res) => {
     });
   }
 
+if (tournament.clubs.length >= tournament.maxClubs) {
+  return res.status(400).json({
+    message: "El torneo ya alcanzó el máximo de equipos.",
+  });
+}
+
   const club = await Club.findOne({
     _id: clubId,
     createdBy: req.admin._id,
@@ -147,6 +202,8 @@ exports.addClubToTournament = async (req, res) => {
       message: "El club ya está en el torneo",
     });
   }
+
+
 
   tournament.clubs.push(clubId);
   await tournament.save();

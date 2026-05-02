@@ -15,6 +15,13 @@ const tournamentSchema = new mongoose.Schema(
       required: [true, "El tipo es obligatorio"],
     },
 
+    format: {
+      type: String,
+      enum: ["league", "cup", "mixed"],
+      required: [true, "El formato es obligatorio"],
+      default: "league",
+    },
+
     season: {
       type: String,
       default: "2026",
@@ -25,6 +32,23 @@ const tournamentSchema = new mongoose.Schema(
       type: String,
       enum: ["draft", "active", "finished"],
       default: "draft",
+    },
+
+    maxClubs: {
+      type: Number,
+      required: [true, "La cantidad de equipos es obligatoria"],
+      min: [2, "Debe haber al menos 2 equipos"],
+    },
+
+    hasPlayoffs: {
+      type: Boolean,
+      default: false,
+    },
+
+    playoffTeams: {
+      type: Number,
+      default: 0,
+      min: [0, "La cantidad de clasificados no puede ser negativa"],
     },
 
     pointsConfig: {
