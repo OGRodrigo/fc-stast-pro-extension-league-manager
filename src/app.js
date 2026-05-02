@@ -5,9 +5,7 @@ const authRoutes = require("./routes/auth.routes");
 const clubRoutes = require("./routes/club.routes");
 const tournamentRoutes = require("./routes/tournament.routes");
 const matchRoutes = require("./routes/match.routes");
-const tableRoutes = require("./routes/table.routes");
-
-
+const aiRoutes = require("./routes/ai.routes");
 
 const app = express();
 
@@ -50,11 +48,10 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/auth", authRoutes);
+app.use("/clubs", clubRoutes);
 app.use("/tournaments", tournamentRoutes);
-app.use("/matches", matchRoutes);
-app.use("/table", tableRoutes);
-app.use("/", tournamentRoutes);
-app.use("/", clubRoutes);
+app.use("/", matchRoutes);
+app.use("/ai", aiRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

@@ -27,3 +27,14 @@ export const matchesApi = {
   update: (id, data) => client.patch(`/matches/${id}`, data),
   remove: (id) => client.delete(`/matches/${id}`),
 };
+
+export const aiApi = {
+  parseMatchImages: (tournamentId, files) => {
+    const formData = new FormData();
+    formData.append("tournamentId", tournamentId);
+    files.forEach((file) => formData.append("images", file));
+    return client.post("/ai/parse-match-images", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+};

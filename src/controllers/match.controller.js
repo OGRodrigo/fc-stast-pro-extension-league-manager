@@ -166,7 +166,7 @@ exports.getTournamentMatches = async (req, res) => {
 exports.getMatchById = async (req, res) => {
   try {
     const match = await Match.findOne({
-      _id: req.params.tournamentId,
+      _id: req.params.id,
       createdBy: req.admin._id,
     })
       .populate("homeClub")
@@ -197,7 +197,7 @@ exports.getMatchById = async (req, res) => {
 exports.updateMatch = async (req, res) => {
   try {
     const match = await Match.findOne({
-      _id: req.params.tournamentId,
+      _id: req.params.id,
       createdBy: req.admin._id,
     });
 

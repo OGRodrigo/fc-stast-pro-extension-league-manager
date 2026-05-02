@@ -1,4 +1,5 @@
 const express = require("express");
+
 const {
   createClub,
   getClubs,
@@ -13,10 +14,10 @@ const router = express.Router();
 
 router.use(protect);
 
-router.post("/clubs", createClub);
-router.get("/clubs", getClubs);
-router.get("/clubs/:id", getClubById);
-router.patch("/clubs/:id", updateClub);
-router.delete("/clubs/:id", deleteClub);
+router.post("/", createClub);
+router.get("/", getClubs);
+router.get("/:id", getClubById);
+router.patch("/:id", updateClub);
+router.delete("/:id", deleteClub);
 
 module.exports = router;

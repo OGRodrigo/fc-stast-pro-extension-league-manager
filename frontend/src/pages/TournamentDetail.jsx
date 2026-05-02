@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { tournamentsApi, matchesApi, clubsApi } from "../api";
 import ClubAvatar from "../components/ui/ClubAvatar";
 import { Modal, ModalActions, ConfirmModal } from "../components/ui/Modal";
+import ProBracket from "../components/ProBracket";
 import {
   generateLeagueRounds,
   generateCupBracket,
@@ -680,10 +681,15 @@ async function handleGenerateNextPlayoffRound() {
       )}
 
       {activeTab === "Bracket" && (
-        <CupBracketTab
+        <BracketTab
+          tournament={tournament}
           matches={matches}
           tournamentClubs={tournamentClubs}
-          onGenerate={() => handleGenerateCalendar()}
+          onEdit={(match) => {
+            setEditMatchError("");
+            setEditingMatch(match);
+          }}
+          onGenerate={handleGenerateCalendar}
           onGenerateNext={handleGenerateNextCupRound}
           isGenerating={generatingCalendar || generatingNextRound}
         />
@@ -1241,28 +1247,20 @@ function CupBracketTab({
     );
   }
 
-  if (matches.length === 0) {
+  const cupMatches = matches.filter((m) => m.phase === "cup");
+
+  if (cupMatches.length === 0) {
     return (
       <div className="card p-10 text-center space-y-4">
-        <p className="text-gray-500 text-sm">
-          El bracket no ha sido generado aún
-        </p>
-        <button
-          onClick={onGenerate}
-          disabled={isGenerating}
-          className="btn-primary mx-auto"
-        >
+        <p className="text-gray-500 text-sm">El bracket no ha sido generado aún</p>
+        <button onClick={onGenerate} disabled={isGenerating} className="btn-primary mx-auto">
           {isGenerating ? "Generando..." : "Generar bracket"}
         </button>
       </div>
     );
   }
 
-  const cupMatches = matches.filter((m) => m.phase === "cup");
-  const rounds = groupMatchesIntoCupRounds(
-    cupMatches.length > 0 ? cupMatches : matches,
-    count
-  );
+  const rounds = groupMatchesIntoCupRounds(cupMatches, count);
   const lastRound = rounds[rounds.length - 1];
   const allPlayed = lastRound?.every((m) => m.status === "played");
   const isFinal = lastRound?.length === 1;
@@ -1279,52 +1277,79 @@ function CupBracketTab({
       {winner && <WinnerBanner club={winner} />}
 
       {!isOver && allPlayed && !isFinal && (
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onGenerateNext}
-            disabled={isGenerating}
-            className="btn-primary flex items-center gap-2"
-          >
-            <CalendarIcon />
-            {isGenerating
-              ? "Generando..."
-              : `Generar ${getCupRoundName(count, rounds.length)} →`}
-          </button>
-          <p className="text-xs" style={{ color: "var(--fifa-mute)" }}>
-            Todos los partidos de la ronda actual están jugados
-          </p>
-        </div>
-      )}
-
-      {!allPlayed && !isOver && (
-        <p className="text-xs" style={{ color: "var(--fifa-mute)" }}>
-          Marca todos los partidos como jugados para avanzar a la siguiente
-          ronda
-        </p>
-      )}
-
-      <div className="overflow-x-auto pb-2">
-        <div
-          className="flex gap-5 items-stretch"
-          style={{ minWidth: `${rounds.length * 230}px` }}
+        <button
+          onClick={onGenerateNext}
+          disabled={isGenerating}
+          className="btn-primary flex items-center gap-2"
         >
+          <CalendarIcon />
+          {isGenerating ? "Generando..." : `Generar ${getCupRoundName(count, rounds.length)} →`}
+        </button>
+      )}
+
+      <div className="card p-6 overflow-x-auto">
+        <div className="flex gap-14 items-stretch min-w-max">
           {rounds.map((round, rIdx) => {
-            const paddingTop = (Math.pow(2, rIdx) - 1) * 50;
-            const gap = Math.pow(2, rIdx) * 12;
+            const isLastRound = rIdx === rounds.length - 1;
+            const paddingTop = (Math.pow(2, rIdx) - 1) * 58;
+            const gap = Math.pow(2, rIdx) * 34;
+
             return (
-              <div key={rIdx} className="flex flex-col flex-1 min-w-[210px]">
+              <div key={rIdx} className="relative flex flex-col min-w-[250px]">
                 <p
-                  className="text-xs font-semibold uppercase tracking-wider mb-3"
-                  style={{ color: "var(--fifa-mute)" }}
+                  className="mb-5 text-center text-xs font-bold uppercase tracking-[0.25em]"
+                  style={{ color: "var(--fifa-neon)" }}
                 >
                   {getCupRoundName(count, rIdx)}
                 </p>
+
                 <div
-                  className="flex flex-col"
+                  className="relative flex flex-col"
                   style={{ gap: `${gap}px`, paddingTop: `${paddingTop}px` }}
                 >
-                  {round.map((match) => (
-                    <BracketMatchCard key={match._id} match={match} />
+                  {round.map((match, mIdx) => (
+                    <div key={match._id} className="relative">
+                      <BracketMatchCard
+  match={match}
+  onClick={(m) => handleOpenMatch(m)}
+/>
+
+                      {!isLastRound && (
+                        <>
+                          <div
+                            className="absolute left-full top-1/2 h-[2px] w-14"
+                            style={{
+                              background:
+                                "linear-gradient(90deg, rgba(36,255,122,.9), rgba(36,255,122,.25))",
+                              boxShadow: "0 0 10px rgba(36,255,122,.65)",
+                            }}
+                          />
+
+                          <div
+                            className="absolute left-[calc(100%+56px)] top-1/2 w-[2px]"
+                            style={{
+                              height: `${gap / 2 + 74}px`,
+                              transform: mIdx % 2 === 0 ? "translateY(0)" : "translateY(-100%)",
+                              background: "rgba(36,255,122,.55)",
+                              boxShadow: "0 0 12px rgba(36,255,122,.55)",
+                            }}
+                          />
+
+                          <div
+                            className="absolute left-[calc(100%+56px)] h-[2px] w-14"
+                            style={{
+                              top:
+                                mIdx % 2 === 0
+                                  ? `calc(50% + ${gap / 2 + 74}px)`
+                                  : `calc(50% - ${gap / 2 + 74}px)`,
+                              background:
+                                "linear-gradient(90deg, rgba(36,255,122,.45), rgba(36,255,122,.85))",
+                              boxShadow: "0 0 10px rgba(36,255,122,.6)",
+                            }}
+                          />
+                        </>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -1543,69 +1568,77 @@ function PlayoffsTab({
   );
 }
 
-function BracketMatchCard({ match }) {
-  const homeName = match.homeClub?.name || "—";
-  const awayName = match.awayClub?.name || "—";
-  const homeAbbr = match.homeClub?.abbr;
-  const awayAbbr = match.awayClub?.abbr;
+function BracketMatchCard({ match, onClick }) {
   const isPlayed = match.status === "played";
 
-  // home wins on draw (cup tiebreaker)
-  const homeWins = isPlayed && match.scoreHome >= match.scoreAway;
-  const awayWins = isPlayed && match.scoreAway > match.scoreHome;
+  const homeWon = isPlayed && match.scoreHome >= match.scoreAway;
+  const awayWon = isPlayed && match.scoreAway > match.scoreHome;
 
   return (
-    <div
-      className="card px-4 py-3"
-      style={isPlayed ? { borderColor: "rgba(255,255,255,0.12)" } : undefined}
+<div
+  onClick={() => onClick(match)}
+  className="relative z-10 overflow-hidden rounded-2xl border p-4 cursor-pointer hover:scale-[1.02] transition"
+      style={{
+        borderColor: "rgba(36,255,122,.22)",
+        background:
+          "linear-gradient(135deg, rgba(7,18,24,.96), rgba(4,8,14,.98))",
+        boxShadow: "0 0 24px rgba(36,255,122,.08)",
+      }}
     >
-      <div className="mb-2.5">
+      <div className="mb-3 flex items-center justify-between">
         <span className={MATCH_STATUS_BADGE[match.status] ?? "badge-scheduled"}>
           {MATCH_STATUS_LABELS[match.status] ?? match.status}
         </span>
+
+        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
+          R{match.round || 1} · #{(match.order ?? 0) + 1}
+        </span>
       </div>
 
-      {/* Home row */}
-      <div
-        className="flex items-center justify-between gap-3 py-1.5 px-2 rounded-md mb-1"
-        style={homeWins ? { backgroundColor: "rgba(36,255,122,0.07)" } : undefined}
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <ClubAvatar name={homeName} logo={match.homeClub?.logo} small dim={isPlayed && !homeWins} />
-          <span className={`text-sm truncate ${homeWins ? "text-white font-bold" : isPlayed ? "text-gray-500" : "text-gray-200 font-medium"}`}>
-            {homeName}
-          </span>
+      <BracketTeamRow
+        club={match.homeClub}
+        score={match.scoreHome}
+        winner={homeWon}
+      />
+
+      <div className="my-2 h-px bg-white/5" />
+
+      <BracketTeamRow
+        club={match.awayClub}
+        score={match.scoreAway}
+        winner={awayWon}
+      />
+    </div>
+  );
+}
+
+function BracketTeamRow({ club, score, winner }) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 ${
+        winner ? "bg-green-500/10" : "bg-white/[0.03]"
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <ClubAvatar name={club?.name || "TBD"} logo={club?.logo} small />
+
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-white">
+            {club?.abbr || club?.name || "TBD"}
+          </p>
+          <p className="truncate text-[10px] text-gray-500">
+            {club?.name || "Por definir"}
+          </p>
         </div>
-        {isPlayed && (
-          <span className={`tabular-nums text-base font-bold shrink-0 ${homeWins ? "text-white" : "text-gray-600"}`}>
-            {match.scoreHome}
-          </span>
-        )}
       </div>
 
-      {/* Away row */}
-      <div
-        className="flex items-center justify-between gap-3 py-1.5 px-2 rounded-md"
-        style={awayWins ? { backgroundColor: "rgba(36,255,122,0.07)" } : undefined}
+      <span
+        className={`text-xl font-black tabular-nums ${
+          winner ? "text-green-400" : "text-white"
+        }`}
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <ClubAvatar name={awayName} logo={match.awayClub?.logo} small dim={isPlayed && !awayWins} />
-          <span className={`text-sm truncate ${awayWins ? "text-white font-bold" : isPlayed ? "text-gray-500" : "text-gray-200 font-medium"}`}>
-            {awayName}
-          </span>
-        </div>
-        {isPlayed && (
-          <span className={`tabular-nums text-base font-bold shrink-0 ${awayWins ? "text-white" : "text-gray-600"}`}>
-            {match.scoreAway}
-          </span>
-        )}
-      </div>
-
-      {!isPlayed && (
-        <p className="text-center text-xs mt-2" style={{ color: "var(--fifa-mute)" }}>
-          vs
-        </p>
-      )}
+        {score ?? 0}
+      </span>
     </div>
   );
 }
@@ -2284,6 +2317,95 @@ function LeagueTable({ table, playoffTeams, champion }) {
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+function groupMatchesByRound(matches) {
+  const rounds = {};
+
+  matches.forEach((match) => {
+    const r = match.round || 1;
+    if (!rounds[r]) rounds[r] = [];
+    rounds[r].push(match);
+  });
+
+  return Object.keys(rounds)
+    .sort((a, b) => Number(a) - Number(b))
+    .map((r) => rounds[r]);
+}
+
+function BracketTab({
+  tournament,
+  matches,
+  tournamentClubs,
+  onEdit,
+  onGenerate,
+  onGenerateNext,
+  isGenerating,
+}) {
+  const count = tournamentClubs.length;
+
+  if (count < 2) {
+    return (
+      <div className="card p-10 text-center">
+        <p className="text-gray-500 text-sm">Agrega equipos para comenzar</p>
+      </div>
+    );
+  }
+
+  if (!isValidCupSize(count)) {
+    return (
+      <div className="card p-10 text-center space-y-2">
+        <p className="text-yellow-400 text-sm font-medium">
+          El formato copa requiere 4, 8 o 16 equipos
+        </p>
+        <p className="text-xs" style={{ color: "var(--fifa-mute)" }}>
+          Actualmente hay {count} equipos en el torneo
+        </p>
+      </div>
+    );
+  }
+
+  const cupMatches = matches.filter((m) => m.phase === "cup");
+
+  if (cupMatches.length === 0) {
+    return (
+      <div className="card p-10 text-center space-y-4">
+        <p className="text-gray-500 text-sm">El bracket no ha sido generado aún</p>
+        <button
+          onClick={onGenerate}
+          disabled={isGenerating}
+          className="btn-primary mx-auto"
+        >
+          {isGenerating ? "Generando..." : "Generar bracket"}
+        </button>
+      </div>
+    );
+  }
+
+  const rounds = groupMatchesIntoCupRounds(cupMatches, count);
+  const lastRound = rounds[rounds.length - 1];
+  const allPlayed = lastRound?.every((m) => m.status === "played");
+  const isFinal = lastRound?.length === 1;
+  const isOver = isFinal && lastRound[0]?.status === "played";
+
+  return (
+    <div className="space-y-4">
+      {!isOver && allPlayed && !isFinal && (
+        <button
+          onClick={onGenerateNext}
+          disabled={isGenerating}
+          className="btn-primary flex items-center gap-2"
+        >
+          <CalendarIcon />
+          {isGenerating
+            ? "Generando..."
+            : `Generar ${getCupRoundName(count, rounds.length)} →`}
+        </button>
+      )}
+
+      <ProBracket matches={cupMatches} />
     </div>
   );
 }
