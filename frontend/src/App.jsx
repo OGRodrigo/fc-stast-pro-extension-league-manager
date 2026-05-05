@@ -12,12 +12,15 @@ import CreateMatch from "./pages/CreateMatch";
 import ImportMatchImage from "./pages/ImportMatchImage";
 import MatchDetail from "./pages/MatchDetail";
 import NotFound from "./pages/NotFound";
+import PublicTournamentPage from "./pages/PublicTournamentPage";
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/public/tournaments/:slug" element={<PublicTournamentPage />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 

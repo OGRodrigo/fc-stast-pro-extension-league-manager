@@ -1,8 +1,18 @@
 // src/services/ai/matchImageParser.service.js
-// Adapted from fifa-club-pro — opencv dependency removed (Python optional feature not ported)
 const { getBaseConfidenceByType, buildFieldConfidence } = require("../../utils/ai/confidence");
 const { readImageText } = require("./ocr.service");
 const { interpretMatchImageOcr } = require("./visionValidation.service");
+
+const SCORE_THRESHOLD = Number(process.env.AI_SCORE_CONFIDENCE_MIN || 0.85);
+const STATS_THRESHOLD = Number(process.env.AI_STATS_CONFIDENCE_MIN || 0.70);
+
+const PRIMARY_STATS_BY_TYPE = {
+  possession_screen: ["possessionHome", "possessionAway"],
+  shots_screen:      ["shotsHome", "shotsAway", "shotsOnTargetHome", "shotsOnTargetAway"],
+  passes_screen:     ["passesHome", "passesAway"],
+  defense_screen:    ["tacklesHome", "tacklesAway", "recoveriesHome", "recoveriesAway"],
+  events_screen:     ["cornersHome", "cornersAway", "foulsHome", "foulsAway", "yellowCardsHome", "yellowCardsAway"],
+};
 
 function isValidScoreNumber(value) {
   return Number.isInteger(value) && value >= 0 && value <= 30;
@@ -281,19 +291,46 @@ function extractStatsFromText(text = "") {
   };
 }
 
-async function parseSingleImage(image, meta = {}) {
+// Local score confidence: how reliable is the heuristic score without OpenAI
+function getLocalScoreConf(score, imageType) {
+  if (score.home == null || score.away == null) return 0;
+  const isScoreScreen = imageType === "scoreboard_summary" || imageType === "final_overview_screen";
+  if (score.method === "vs_score_vs") return 0.92;
+  if (score.method === "classic_pair") return isScoreScreen ? 0.80 : 0.58;
+  if (score.method === "loose_pair") return isScoreScreen ? 0.45 : 0.28;
+  return 0;
+}
+
+// Local stats confidence: how reliably heuristics extracted primary stats for this screen type
+function getLocalStatsConf(stats, imageType) {
+  const primary = PRIMARY_STATS_BY_TYPE[imageType];
+  if (!primary) {
+    const n = Object.values(stats).filter((v) => v != null).length;
+    return n >= 6 ? 0.72 : n > 0 ? 0.50 : 0;
+  }
+  const extracted = primary.filter((k) => stats[k] != null).length;
+  if (extracted === 0) return 0;
+  if (extracted === primary.length) return 0.88;
+  if (extracted >= Math.ceil(primary.length / 2)) return 0.72;
+  return 0.45;
+}
+
+async function parseSingleImage(image, meta = {}, tournamentClubs = []) {
   let type = image.type || "unknown";
   let baseConfidence = getBaseConfidenceByType(type);
-
   let ocr = { text: "", confidence: 0, lines: [], words: [], provider: "azure-vision" };
 
+  // 1. Azure OCR
+  const t_ocr = Date.now();
   try {
     ocr = await readImageText(image.buffer, {
       contentType: image.mimetype || "application/octet-stream",
       filename: image.originalName || null,
       size: image.size || null,
     });
+    console.log(`[ai] Azure OCR (img ${image.index ?? "?"}): ${Date.now() - t_ocr}ms`);
   } catch (error) {
+    console.log(`[ai] Azure OCR falló (img ${image.index ?? "?"}): ${Date.now() - t_ocr}ms — ${error?.message}`);
     return {
       sourceImage: { index: image.index, type, originalName: image.originalName, size: image.size, mimetype: image.mimetype },
       partialDraft: {
@@ -310,7 +347,8 @@ async function parseSingleImage(image, meta = {}) {
 
   const text = ocr.text || "";
 
-  // Detect image type from OCR text if not known from filename
+  // 2. Detect image type + local heuristics
+  const t_local = Date.now();
   const detectedType = detectImageType(text);
   if (type === "unknown" && detectedType !== "unknown") {
     type = detectedType;
@@ -320,20 +358,39 @@ async function parseSingleImage(image, meta = {}) {
   const heuristicScore = extractScoreFromText(text);
   const heuristicStatus = extractMatchStatus(text);
   const heuristicStats = extractStatsFromText(text);
+  console.log(`[ai] parse local (img ${image.index ?? "?"}): ${Date.now() - t_local}ms tipo=${type}`);
 
+  // 3. Decide if OpenAI is needed
+  const canUseScoreboardData = type === "scoreboard_summary" || type === "final_overview_screen" || type === "unknown";
+  const localScoreConf = canUseScoreboardData ? getLocalScoreConf(heuristicScore, type) : 1.0;
+  const localStatsConf = getLocalStatsConf(heuristicStats, type);
+  const scoreNeedsAI = canUseScoreboardData && localScoreConf < SCORE_THRESHOLD;
+  const statsNeedsAI = localStatsConf < STATS_THRESHOLD;
+  const needsAI = scoreNeedsAI || statsNeedsAI;
+
+  // 4. Conditional OpenAI call
   let aiInterpretation = null;
-  try {
-    aiInterpretation = await interpretMatchImageOcr({
-      text,
-      lines: Array.isArray(ocr.lines) ? ocr.lines : [],
-      words: Array.isArray(ocr.words) ? ocr.words : [],
-      imageType: type,
-      meta,
-    });
-  } catch (error) {
-    aiInterpretation = null;
+  if (needsAI) {
+    const t_ai = Date.now();
+    try {
+      aiInterpretation = await interpretMatchImageOcr({
+        text,
+        lines: Array.isArray(ocr.lines) ? ocr.lines : [],
+        words: Array.isArray(ocr.words) ? ocr.words : [],
+        imageType: type,
+        meta,
+        tournamentClubs,
+      });
+      console.log(`[ai] OpenAI (img ${image.index ?? "?"}): ${Date.now() - t_ai}ms [score=${scoreNeedsAI}, stats=${statsNeedsAI}]`);
+    } catch (error) {
+      console.log(`[ai] OpenAI falló (img ${image.index ?? "?"}): ${error?.message}`);
+      aiInterpretation = null;
+    }
+  } else {
+    console.log(`[ai] OpenAI omitido (img ${image.index ?? "?"}): scoreConf=${localScoreConf.toFixed(2)} statsConf=${localStatsConf.toFixed(2)}`);
   }
 
+  // 5. Merge heuristic + AI results
   const aiScore = aiInterpretation?.score || {};
   const aiClubs = aiInterpretation?.clubs || {};
   const aiStats = aiInterpretation?.teamStats || {};
@@ -386,8 +443,6 @@ async function parseSingleImage(image, meta = {}) {
     ? cleanClubCandidate(aiClubs.away.trim())
     : null;
 
-  const canUseScoreboardData = type === "scoreboard_summary" || type === "final_overview_screen" || type === "unknown";
-
   const partialDraft = {
     homeClub: { name: finalHomeClubName, normalizedName: null },
     awayClub: { name: finalAwayClubName, normalizedName: null },
@@ -410,6 +465,9 @@ async function parseSingleImage(image, meta = {}) {
     `Texto OCR preview: ${text.slice(0, 120)}`,
     `Score heurístico: ${heuristicScore.home ?? "null"} - ${heuristicScore.away ?? "null"}`,
     `Confianza score heurístico: ${heuristicScore.confidence ?? 0}`,
+    needsAI
+      ? `OpenAI usado (scoreConf=${localScoreConf.toFixed(2)}, statsConf=${localStatsConf.toFixed(2)})`
+      : `OpenAI omitido (scoreConf=${localScoreConf.toFixed(2)}, statsConf=${localStatsConf.toFixed(2)})`,
     `Score IA: ${aiScore.home ?? "null"} - ${aiScore.away ?? "null"}`,
     `Club local IA: ${finalHomeClubName ?? "null"}`,
     `Club visita IA: ${finalAwayClubName ?? "null"}`,
@@ -447,12 +505,9 @@ async function parseSingleImage(image, meta = {}) {
   };
 }
 
-async function parseMatchImagesService({ classifiedImages = [], meta = {} }) {
-  const results = [];
-  for (const image of classifiedImages) {
-    results.push(await parseSingleImage(image, meta));
-  }
-  return results;
+async function parseMatchImagesService({ classifiedImages = [], meta = {}, tournamentClubs = [] }) {
+  // Run all images in parallel — Azure OCR and conditional OpenAI calls fire concurrently
+  return Promise.all(classifiedImages.map((img) => parseSingleImage(img, meta, tournamentClubs)));
 }
 
 module.exports = parseMatchImagesService;

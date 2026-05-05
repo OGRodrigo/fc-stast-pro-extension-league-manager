@@ -5,7 +5,6 @@ const {
   getTournamentMatches,
   getMatchById,
   updateMatch,
-  getMatchesByTournament,
   deleteMatch,
 } = require("../controllers/match.controller");
 

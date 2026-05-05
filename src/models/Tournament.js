@@ -64,6 +64,27 @@ const tournamentSchema = new mongoose.Schema(
       },
     ],
 
+    visibility: {
+      type: String,
+      enum: ["private", "public"],
+      default: "private",
+    },
+
+    logo: {
+      type: String,
+      default: "",
+    },
+
+    publicSlug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: (v) => !v || /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(v),
+        message: "El slug solo puede contener letras minúsculas, números y guiones.",
+      },
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
@@ -77,5 +98,7 @@ tournamentSchema.index(
   { createdBy: 1, name: 1, season: 1 },
   { unique: true }
 );
+
+tournamentSchema.index({ publicSlug: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("Tournament", tournamentSchema);

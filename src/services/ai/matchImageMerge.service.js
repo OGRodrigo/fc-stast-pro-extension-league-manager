@@ -25,6 +25,7 @@ function createEmptyDraft(meta = {}) {
       sourceImages: [],
     },
     confidence: { overall: 0, score: 0, clubs: 0, stats: 0 },
+    statSources: {},
     missingFields: [],
     conflicts: [],
     notes: [],
@@ -64,40 +65,41 @@ function pickStatFromResults(results = [], field) {
   return null;
 }
 
-function setIfResolved(targetStats, key, value) {
-  if (value !== null && value !== undefined) targetStats[key] = value;
-}
-
-function applyStatsPriority(targetStats, grouped = {}) {
+function applyStatsPriority(targetStats, grouped = {}, statSources = {}) {
   const pick = (type, field) => pickStatFromResults(grouped[type] || [], field);
 
+  function apply(key, screenType) {
+    const value = pick(screenType, key);
+    if (value != null) { targetStats[key] = value; statSources[key] = screenType; }
+  }
+
   // possession
-  setIfResolved(targetStats, "possessionHome", pick("possession_screen", "possessionHome"));
-  setIfResolved(targetStats, "possessionAway", pick("possession_screen", "possessionAway"));
+  apply("possessionHome", "possession_screen");
+  apply("possessionAway", "possession_screen");
   // shots
-  setIfResolved(targetStats, "shotsHome", pick("shots_screen", "shotsHome"));
-  setIfResolved(targetStats, "shotsAway", pick("shots_screen", "shotsAway"));
-  setIfResolved(targetStats, "shotsOnTargetHome", pick("shots_screen", "shotsOnTargetHome"));
-  setIfResolved(targetStats, "shotsOnTargetAway", pick("shots_screen", "shotsOnTargetAway"));
+  apply("shotsHome", "shots_screen");
+  apply("shotsAway", "shots_screen");
+  apply("shotsOnTargetHome", "shots_screen");
+  apply("shotsOnTargetAway", "shots_screen");
   // passes
-  setIfResolved(targetStats, "passesHome", pick("passes_screen", "passesHome"));
-  setIfResolved(targetStats, "passesAway", pick("passes_screen", "passesAway"));
-  setIfResolved(targetStats, "passesCompletedHome", pick("passes_screen", "passesCompletedHome"));
-  setIfResolved(targetStats, "passesCompletedAway", pick("passes_screen", "passesCompletedAway"));
+  apply("passesHome", "passes_screen");
+  apply("passesAway", "passes_screen");
+  apply("passesCompletedHome", "passes_screen");
+  apply("passesCompletedAway", "passes_screen");
   // defense
-  setIfResolved(targetStats, "tacklesHome", pick("defense_screen", "tacklesHome"));
-  setIfResolved(targetStats, "tacklesAway", pick("defense_screen", "tacklesAway"));
-  setIfResolved(targetStats, "recoveriesHome", pick("defense_screen", "recoveriesHome"));
-  setIfResolved(targetStats, "recoveriesAway", pick("defense_screen", "recoveriesAway"));
+  apply("tacklesHome", "defense_screen");
+  apply("tacklesAway", "defense_screen");
+  apply("recoveriesHome", "defense_screen");
+  apply("recoveriesAway", "defense_screen");
   // events
-  setIfResolved(targetStats, "cornersHome", pick("events_screen", "cornersHome"));
-  setIfResolved(targetStats, "cornersAway", pick("events_screen", "cornersAway"));
-  setIfResolved(targetStats, "foulsHome", pick("events_screen", "foulsHome"));
-  setIfResolved(targetStats, "foulsAway", pick("events_screen", "foulsAway"));
-  setIfResolved(targetStats, "yellowCardsHome", pick("events_screen", "yellowCardsHome"));
-  setIfResolved(targetStats, "yellowCardsAway", pick("events_screen", "yellowCardsAway"));
-  setIfResolved(targetStats, "redCardsHome", pick("events_screen", "redCardsHome"));
-  setIfResolved(targetStats, "redCardsAway", pick("events_screen", "redCardsAway"));
+  apply("cornersHome", "events_screen");
+  apply("cornersAway", "events_screen");
+  apply("foulsHome", "events_screen");
+  apply("foulsAway", "events_screen");
+  apply("yellowCardsHome", "events_screen");
+  apply("yellowCardsAway", "events_screen");
+  apply("redCardsHome", "events_screen");
+  apply("redCardsAway", "events_screen");
 }
 
 function average(nums = []) {
@@ -176,7 +178,18 @@ function mergeMatchImageResults({ parsedResults = [], meta = {} }) {
     if (Array.isArray(result?.conflicts)) output.conflicts.push(...result.conflicts);
   });
 
-  applyStatsPriority(output.matchDraft.stats, grouped);
+  applyStatsPriority(output.matchDraft.stats, grouped, output.statSources);
+
+  // Track sources for stats filled by mergeStats but not covered by a dedicated screen
+  parsedResults.forEach((result) => {
+    const stats = result?.partialDraft?.stats || {};
+    const type = result?.sourceImage?.type || "unknown";
+    for (const [key, value] of Object.entries(stats)) {
+      if (value != null && output.matchDraft.stats[key] != null && !output.statSources[key]) {
+        output.statSources[key] = type;
+      }
+    }
+  });
 
   const bestScore = pickBestScoreResult(parsedResults);
   if (bestScore) {

@@ -71,13 +71,7 @@ export default function MatchDetail() {
   }
 
   const s = match.clubStats ?? {};
-  const hasStats =
-    (s.possessionHome || 0) > 0 ||
-    (s.possessionAway || 0) > 0 ||
-    (s.shotsHome || 0) > 0 ||
-    (s.shotsAway || 0) > 0 ||
-    (s.passesHome || 0) > 0 ||
-    (s.passesAway || 0) > 0;
+  const hasStats = Object.values(s).some((v) => typeof v === "number" && v > 0);
 
   const date = new Date(match.date).toLocaleDateString("es-ES", {
     weekday: "long",
@@ -161,22 +155,66 @@ export default function MatchDetail() {
           </h2>
 
           <div className="space-y-5">
-            <StatBar
-              label="Posesión"
-              unit="%"
-              home={s.possessionHome ?? 0}
-              away={s.possessionAway ?? 0}
-            />
-            <StatBar
-              label="Tiros"
-              home={s.shotsHome ?? 0}
-              away={s.shotsAway ?? 0}
-            />
-            <StatBar
-              label="Pases"
-              home={s.passesHome ?? 0}
-              away={s.passesAway ?? 0}
-            />
+            {[
+              {
+                label: "Ataque",
+                rows: [
+                  { label: "Posesión", unit: "%", h: s.possessionHome, a: s.possessionAway },
+                  { label: "Tiros totales",  h: s.shotsHome,          a: s.shotsAway },
+                  { label: "Tiros al arco",  h: s.shotsOnTargetHome,  a: s.shotsOnTargetAway },
+                ],
+              },
+              {
+                label: "Pases",
+                rows: [
+                  { label: "Pases totales",     h: s.passesHome,          a: s.passesAway },
+                  { label: "Pases completados",  h: s.passesCompletedHome, a: s.passesCompletedAway },
+                ],
+              },
+              {
+                label: "Defensa",
+                rows: [
+                  { label: "Tackles",        h: s.tacklesHome,    a: s.tacklesAway },
+                  { label: "Recuperaciones", h: s.recoveriesHome, a: s.recoveriesAway },
+                  { label: "Córners",        h: s.cornersHome,    a: s.cornersAway },
+                ],
+              },
+              {
+                label: "Disciplina",
+                rows: [
+                  { label: "Faltas",    h: s.foulsHome,       a: s.foulsAway },
+                  { label: "Amarillas", h: s.yellowCardsHome, a: s.yellowCardsAway },
+                  { label: "Rojas",     h: s.redCardsHome,    a: s.redCardsAway },
+                ],
+              },
+            ].map((cat) => {
+              const visible = cat.rows.filter((r) => (r.h ?? 0) + (r.a ?? 0) > 0);
+              if (!visible.length) return null;
+              return (
+                <div key={cat.label}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className="text-[9px] font-bold uppercase tracking-widest shrink-0"
+                      style={{ color: "var(--fifa-mute)" }}
+                    >
+                      {cat.label}
+                    </span>
+                    <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
+                  </div>
+                  <div className="space-y-3">
+                    {visible.map((row) => (
+                      <StatBar
+                        key={row.label}
+                        label={row.label}
+                        unit={row.unit}
+                        home={row.h ?? 0}
+                        away={row.a ?? 0}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div
@@ -271,12 +309,28 @@ function EditMatchModal({ match, clubs, error, onSave, onClose }) {
     scoreHome: match.scoreHome ?? 0,
     scoreAway: match.scoreAway ?? 0,
     status: match.status ?? "scheduled",
-    possessionHome: match.clubStats?.possessionHome ?? 0,
-    possessionAway: match.clubStats?.possessionAway ?? 0,
-    shotsHome: match.clubStats?.shotsHome ?? 0,
-    shotsAway: match.clubStats?.shotsAway ?? 0,
-    passesHome: match.clubStats?.passesHome ?? 0,
-    passesAway: match.clubStats?.passesAway ?? 0,
+    possessionHome:    match.clubStats?.possessionHome    ?? 0,
+    possessionAway:    match.clubStats?.possessionAway    ?? 0,
+    shotsHome:         match.clubStats?.shotsHome         ?? 0,
+    shotsAway:         match.clubStats?.shotsAway         ?? 0,
+    shotsOnTargetHome: match.clubStats?.shotsOnTargetHome ?? 0,
+    shotsOnTargetAway: match.clubStats?.shotsOnTargetAway ?? 0,
+    passesHome:          match.clubStats?.passesHome          ?? 0,
+    passesAway:          match.clubStats?.passesAway          ?? 0,
+    passesCompletedHome: match.clubStats?.passesCompletedHome ?? 0,
+    passesCompletedAway: match.clubStats?.passesCompletedAway ?? 0,
+    tacklesHome:    match.clubStats?.tacklesHome    ?? 0,
+    tacklesAway:    match.clubStats?.tacklesAway    ?? 0,
+    recoveriesHome: match.clubStats?.recoveriesHome ?? 0,
+    recoveriesAway: match.clubStats?.recoveriesAway ?? 0,
+    cornersHome:    match.clubStats?.cornersHome    ?? 0,
+    cornersAway:    match.clubStats?.cornersAway    ?? 0,
+    foulsHome:       match.clubStats?.foulsHome       ?? 0,
+    foulsAway:       match.clubStats?.foulsAway       ?? 0,
+    yellowCardsHome: match.clubStats?.yellowCardsHome ?? 0,
+    yellowCardsAway: match.clubStats?.yellowCardsAway ?? 0,
+    redCardsHome:    match.clubStats?.redCardsHome    ?? 0,
+    redCardsAway:    match.clubStats?.redCardsAway    ?? 0,
   });
   const [saving, setSaving] = useState(false);
 
@@ -297,12 +351,28 @@ function EditMatchModal({ match, clubs, error, onSave, onClose }) {
       scoreAway: Number(form.scoreAway),
       status: form.status,
       clubStats: {
-        possessionHome: Number(form.possessionHome),
-        possessionAway: Number(form.possessionAway),
-        shotsHome: Number(form.shotsHome),
-        shotsAway: Number(form.shotsAway),
-        passesHome: Number(form.passesHome),
-        passesAway: Number(form.passesAway),
+        possessionHome:    Number(form.possessionHome),
+        possessionAway:    Number(form.possessionAway),
+        shotsHome:         Number(form.shotsHome),
+        shotsAway:         Number(form.shotsAway),
+        shotsOnTargetHome: Number(form.shotsOnTargetHome),
+        shotsOnTargetAway: Number(form.shotsOnTargetAway),
+        passesHome:          Number(form.passesHome),
+        passesAway:          Number(form.passesAway),
+        passesCompletedHome: Number(form.passesCompletedHome),
+        passesCompletedAway: Number(form.passesCompletedAway),
+        tacklesHome:    Number(form.tacklesHome),
+        tacklesAway:    Number(form.tacklesAway),
+        recoveriesHome: Number(form.recoveriesHome),
+        recoveriesAway: Number(form.recoveriesAway),
+        cornersHome:    Number(form.cornersHome),
+        cornersAway:    Number(form.cornersAway),
+        foulsHome:       Number(form.foulsHome),
+        foulsAway:       Number(form.foulsAway),
+        yellowCardsHome: Number(form.yellowCardsHome),
+        yellowCardsAway: Number(form.yellowCardsAway),
+        redCardsHome:    Number(form.redCardsHome),
+        redCardsAway:    Number(form.redCardsAway),
       },
     });
     setSaving(false);
@@ -372,24 +442,93 @@ function EditMatchModal({ match, clubs, error, onSave, onClose }) {
 
         {/* Stats */}
         <div className="border-t pt-5" style={{ borderColor: "var(--fifa-line)" }}>
-          <p className="label mb-1">
+          <p className="label mb-3">
             Estadísticas{" "}
             <span className="text-xs font-normal" style={{ color: "var(--fifa-mute)" }}>opcional</span>
           </p>
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 mt-3">
-            <span className="text-xs text-center mb-2" style={{ color: "var(--fifa-mute)" }}>Local</span>
-            <span />
-            <span className="text-xs text-center mb-2" style={{ color: "var(--fifa-mute)" }}>Visitante</span>
-            <input name="possessionHome" type="number" min={0} max={100} value={form.possessionHome} onChange={handleChange} className="input-field text-center mb-3" />
-            <span className="text-xs text-center px-2 whitespace-nowrap mb-3" style={{ color: "var(--fifa-mute)" }}>Posesión %</span>
-            <input name="possessionAway" type="number" min={0} max={100} value={form.possessionAway} onChange={handleChange} className="input-field text-center mb-3" />
-            <input name="shotsHome" type="number" min={0} value={form.shotsHome} onChange={handleChange} className="input-field text-center mb-3" />
-            <span className="text-xs text-center px-2 whitespace-nowrap mb-3" style={{ color: "var(--fifa-mute)" }}>Tiros</span>
-            <input name="shotsAway" type="number" min={0} value={form.shotsAway} onChange={handleChange} className="input-field text-center mb-3" />
-            <input name="passesHome" type="number" min={0} value={form.passesHome} onChange={handleChange} className="input-field text-center" />
-            <span className="text-xs text-center px-2 whitespace-nowrap" style={{ color: "var(--fifa-mute)" }}>Pases</span>
-            <input name="passesAway" type="number" min={0} value={form.passesAway} onChange={handleChange} className="input-field text-center" />
+
+          {/* Column headers */}
+          <div className="flex items-center gap-3 mb-3">
+            <span className="flex-1 text-xs text-center" style={{ color: "var(--fifa-mute)" }}>Local</span>
+            <span className="w-32 shrink-0" />
+            <span className="flex-1 text-xs text-center" style={{ color: "var(--fifa-mute)" }}>Visitante</span>
           </div>
+
+          {[
+            {
+              label: "Ataque",
+              rows: [
+                { key: "possession",    label: "Posesión %",       max: 100 },
+                { key: "shots",         label: "Tiros totales" },
+                { key: "shotsOnTarget", label: "Tiros al arco" },
+              ],
+            },
+            {
+              label: "Pases",
+              rows: [
+                { key: "passes",          label: "Pases totales" },
+                { key: "passesCompleted", label: "Pases completados" },
+              ],
+            },
+            {
+              label: "Defensa",
+              rows: [
+                { key: "tackles",    label: "Tackles" },
+                { key: "recoveries", label: "Recuperaciones" },
+                { key: "corners",    label: "Córners" },
+              ],
+            },
+            {
+              label: "Disciplina",
+              rows: [
+                { key: "fouls",       label: "Faltas" },
+                { key: "yellowCards", label: "Amarillas" },
+                { key: "redCards",    label: "Rojas" },
+              ],
+            },
+          ].map((cat) => (
+            <div key={cat.label} className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className="text-[9px] font-bold uppercase tracking-widest shrink-0"
+                  style={{ color: "var(--fifa-mute)" }}
+                >
+                  {cat.label}
+                </span>
+                <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.06)" }} />
+              </div>
+              <div className="space-y-2">
+                {cat.rows.map((row) => (
+                  <div key={row.key} className="flex items-center gap-3">
+                    <input
+                      name={`${row.key}Home`}
+                      type="number"
+                      min={0}
+                      max={row.max}
+                      value={form[`${row.key}Home`]}
+                      onChange={handleChange}
+                      className="input-field text-center flex-1"
+                    />
+                    <span
+                      className="text-xs text-center w-32 shrink-0"
+                      style={{ color: "var(--fifa-mute)" }}
+                    >
+                      {row.label}
+                    </span>
+                    <input
+                      name={`${row.key}Away`}
+                      type="number"
+                      min={0}
+                      max={row.max}
+                      value={form[`${row.key}Away`]}
+                      onChange={handleChange}
+                      className="input-field text-center flex-1"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
         <ModalActions onCancel={onClose} saving={saving} label="Guardar cambios" />

@@ -45,6 +45,15 @@ const MATCH_STATUS_LABELS = {
   played: "Jugado",
 };
 
+function generateSlug(name) {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 function toDatetimeLocal(dateStr) {
   if (!dateStr) return "";
 
@@ -541,6 +550,11 @@ async function handleGenerateNextPlayoffRound() {
     }
   }
 
+  async function handleVisibilityUpdate(data) {
+    const res = await tournamentsApi.update(id, data);
+    setTournament(res.data.tournament);
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -629,6 +643,9 @@ async function handleGenerateNextPlayoffRound() {
           <PencilIcon /> Editar
         </button>
       </div>
+
+      <VisibilityBar tournament={tournament} onUpdate={handleVisibilityUpdate} />
+      <TournamentImageCard tournament={tournament} onUpdate={handleVisibilityUpdate} />
 
       <div className="flex gap-6 border-b border-white/5">
         {tabs.map((tab) => (
@@ -908,6 +925,268 @@ function ClubsTab({ tournament, tournamentClubs, clubsToAdd, onAdd, onRemove }) 
   );
 }
 
+
+function VisibilityBar({ tournament, onUpdate }) {
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const isPublic = tournament.visibility === "public";
+  const publicUrl = isPublic && tournament.publicSlug
+    ? `${window.location.origin}/public/tournaments/${tournament.publicSlug}`
+    : null;
+
+  async function makePublic() {
+    const slug = tournament.publicSlug || generateSlug(tournament.name);
+    setLoading(true);
+    try {
+      await onUpdate({ visibility: "public", publicSlug: slug });
+    } catch (err) {
+      alert(err.response?.data?.message ?? "Error actualizando visibilidad");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function makePrivate() {
+    setLoading(true);
+    try {
+      await onUpdate({ visibility: "private" });
+    } catch (err) {
+      alert(err.response?.data?.message ?? "Error actualizando visibilidad");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function copyLink() {
+    if (!publicUrl) return;
+    navigator.clipboard.writeText(publicUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div
+      className="card px-5 py-3.5 flex items-center gap-4 flex-wrap"
+      style={{
+        borderColor: isPublic ? "rgba(36,255,122,0.25)" : "var(--fifa-line)",
+        backgroundColor: isPublic ? "rgba(36,255,122,0.03)" : undefined,
+      }}
+    >
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        <GlobeIcon isPublic={isPublic} />
+        <span
+          className="text-xs font-semibold uppercase tracking-wider shrink-0"
+          style={{ color: "var(--fifa-mute)" }}
+        >
+          Visibilidad
+        </span>
+        <span
+          className="text-xs px-2 py-0.5 rounded-full font-bold shrink-0"
+          style={
+            isPublic
+              ? { color: "var(--fifa-neon)", backgroundColor: "rgba(36,255,122,0.12)" }
+              : { color: "var(--fifa-mute)", backgroundColor: "rgba(255,255,255,0.06)" }
+          }
+        >
+          {isPublic ? "Público" : "Privado"}
+        </span>
+
+        {publicUrl && (
+          <span
+            className="text-xs truncate hidden sm:block"
+            style={{ color: "var(--fifa-mute)" }}
+            title={publicUrl}
+          >
+            {publicUrl}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0">
+        {isPublic ? (
+          <>
+            <button
+              onClick={copyLink}
+              className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+              style={
+                copied
+                  ? {
+                      color: "var(--fifa-neon)",
+                      borderColor: "rgba(36,255,122,0.35)",
+                      backgroundColor: "rgba(36,255,122,0.10)",
+                    }
+                  : {
+                      color: "var(--fifa-mute)",
+                      borderColor: "var(--fifa-line)",
+                      backgroundColor: "rgba(255,255,255,0.03)",
+                    }
+              }
+            >
+              {copied ? "¡Copiado!" : "Copiar link"}
+            </button>
+            <button
+              onClick={makePrivate}
+              disabled={loading}
+              className="btn-danger"
+              style={{ opacity: loading ? 0.5 : 1 }}
+            >
+              {loading ? "Guardando..." : "Hacer privado"}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={makePublic}
+            disabled={loading}
+            className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+            style={{
+              color: "var(--fifa-neon)",
+              borderColor: "rgba(36,255,122,0.30)",
+              backgroundColor: "rgba(36,255,122,0.06)",
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            {loading ? "Guardando..." : "Hacer público"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TournamentImageCard({ tournament, onUpdate }) {
+  const [loading, setLoading] = useState(false);
+
+  function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert("La imagen no puede superar 2 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      setLoading(true);
+      try {
+        await onUpdate({ logo: reader.result });
+      } catch (err) {
+        alert(err.response?.data?.message ?? "Error subiendo imagen");
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function removeLogo() {
+    setLoading(true);
+    try {
+      await onUpdate({ logo: "" });
+    } catch (err) {
+      alert(err.response?.data?.message ?? "Error quitando imagen");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="card px-5 py-4 flex items-center gap-4 flex-wrap">
+      {/* Preview */}
+      <div
+        className="w-12 h-12 rounded-xl border overflow-hidden shrink-0 flex items-center justify-center"
+        style={{ borderColor: "var(--fifa-line)", backgroundColor: "rgba(255,255,255,.04)" }}
+      >
+        {tournament.logo ? (
+          <img
+            src={tournament.logo}
+            alt="Logo torneo"
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          <ImageIcon />
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fifa-mute)" }}>
+          Imagen del torneo
+        </p>
+        <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,.25)" }}>
+          {tournament.logo
+            ? "Imagen cargada · se muestra en la página pública"
+            : "Sin imagen · se mostrará en la página pública"}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0">
+        <label
+          className="text-xs px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
+          style={{
+            color: "var(--fifa-neon)",
+            borderColor: "rgba(36,255,122,.30)",
+            backgroundColor: "rgba(36,255,122,.06)",
+            opacity: loading ? 0.5 : 1,
+            pointerEvents: loading ? "none" : "auto",
+          }}
+        >
+          {loading ? "Guardando..." : tournament.logo ? "Cambiar imagen" : "Subir imagen"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={loading}
+          />
+        </label>
+
+        {tournament.logo && !loading && (
+          <button onClick={removeLogo} className="btn-danger">
+            Quitar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ImageIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      style={{ color: "var(--fifa-mute)" }}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+      />
+    </svg>
+  );
+}
+
+function GlobeIcon({ isPublic }) {
+  return (
+    <svg
+      className="w-3.5 h-3.5 shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      style={{ color: isPublic ? "var(--fifa-neon)" : "var(--fifa-mute)" }}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"
+      />
+    </svg>
+  );
+}
 
 function MatchesTab({
   matches,
@@ -2479,24 +2758,6 @@ function PencilIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"
-      />
-    </svg>
-  );
-}
-
-function ImageIcon() {
-  return (
-    <svg
-      className="w-4 h-4"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.5}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
       />
     </svg>
   );

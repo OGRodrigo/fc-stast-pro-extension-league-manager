@@ -1,4 +1,14 @@
+import axios from "axios";
 import client from "./client";
+
+const publicClient = axios.create({
+  baseURL: "http://localhost:3000",
+  headers: { "Content-Type": "application/json" },
+});
+
+export const publicApi = {
+  getTournamentBySlug: (slug) => publicClient.get(`/public/tournaments/${slug}`),
+};
 
 export const clubsApi = {
   getAll: () => client.get("/clubs"),

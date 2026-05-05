@@ -82,7 +82,8 @@
   }
 
   /* ── Form inputs ── */
-  .input-field {
+  .input-field,
+  .input {
     @apply w-full rounded-lg px-4 py-2.5 text-sm placeholder-gray-600
            border
            focus:outline-none focus:ring-1 transition-all duration-150;
@@ -92,7 +93,8 @@
     --tw-ring-color: var(--fifa-neon);
   }
 
-  .input-field:focus {
+  .input-field:focus,
+  .input:focus {
     border-color: var(--fifa-neon);
     box-shadow: 0 0 0 1px var(--fifa-neon);
   }
