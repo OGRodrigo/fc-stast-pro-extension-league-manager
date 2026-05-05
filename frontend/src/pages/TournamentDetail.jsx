@@ -596,83 +596,140 @@ async function handleGenerateNextPlayoffRound() {
         <BackIcon /> Torneos
       </button>
 
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className={TYPE_BADGE[tournament.type] ?? "badge-tournament"}>
-              {TYPE_LABELS[tournament.type] ?? tournament.type}
-            </span>
+      <div
+        className="card px-6 py-5"
+        style={{
+          borderColor: "rgba(36,255,122,.18)",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Neon left accent */}
+        <div style={{
+          position: "absolute", left: 0, top: 0, bottom: 0, width: "3px",
+          background: "var(--fifa-neon)",
+          boxShadow: "0 0 14px var(--fifa-neon)",
+        }} />
 
-            <span className={STATUS_BADGE[tournament.status] ?? "badge-draft"}>
-              {STATUS_LABELS[tournament.status] ?? tournament.status}
-            </span>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className={TYPE_BADGE[tournament.type] ?? "badge-tournament"}>
+                {TYPE_LABELS[tournament.type] ?? tournament.type}
+              </span>
+              <span className={STATUS_BADGE[tournament.status] ?? "badge-draft"}>
+                {STATUS_LABELS[tournament.status] ?? tournament.status}
+              </span>
+            </div>
+
+            <h1
+              style={{
+                fontFamily: "var(--font-title)",
+                fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)",
+                fontWeight: 900,
+                color: "#fff",
+                letterSpacing: "1px",
+                textTransform: "uppercase",
+                lineHeight: 1.05,
+              }}
+            >
+              {tournament.name}
+            </h1>
+
+            {allLeaguePlayed && tournament.format !== "cup" && (
+              <p className="text-green-400 text-sm mt-2 font-semibold">
+                ✔ Liga finalizada
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5">
+              <p className="text-gray-500 text-sm">
+                Temporada {tournament.season}
+              </p>
+              <p className="text-gray-500 text-sm">
+                {tournamentClubs.length}/{tournament.maxClubs ?? "—"} equipos
+              </p>
+              <p className="text-gray-500 text-sm">
+                {FORMAT_LABELS[tournament.format] ?? tournament.format ?? "—"}
+              </p>
+              {tournament.hasPlayoffs && (
+                <p style={{ color: "var(--fifa-neon)", fontSize: "0.875rem" }}>
+                  Top {tournament.playoffTeams} → playoffs
+                </p>
+              )}
+            </div>
           </div>
 
-          <h1 className="text-2xl font-bold text-white">{tournament.name}</h1>
-
-{allLeaguePlayed && tournament.format !== "cup" && (
-  <p className="text-green-400 text-sm mt-2 font-semibold">
-    ✔ Liga finalizada
-  </p>
-)}          
-
-          <p className="text-gray-500 text-sm mt-1">
-            Temporada {tournament.season} · {tournamentClubs.length}/
-            {tournament.maxClubs ?? "—"} equipos
-          </p>
-
-          <p className="text-gray-500 text-sm mt-1">
-            Formato:{" "}
-            {FORMAT_LABELS[tournament.format] ?? tournament.format ?? "—"}
-          </p>
-
-          {tournament.hasPlayoffs && (
-            <p className="text-green-400 text-sm mt-1">
-              Clasifican {tournament.playoffTeams} equipos a playoffs
-            </p>
-          )}
+          <button
+            onClick={() => {
+              setEditTournamentError("");
+              setShowEditTournament(true);
+            }}
+            className="btn-secondary shrink-0 flex items-center gap-2"
+          >
+            <PencilIcon /> Editar
+          </button>
         </div>
-
-        <button
-          onClick={() => {
-            setEditTournamentError("");
-            setShowEditTournament(true);
-          }}
-          className="btn-secondary shrink-0 flex items-center gap-2"
-        >
-          <PencilIcon /> Editar
-        </button>
       </div>
 
       <VisibilityBar tournament={tournament} onUpdate={handleVisibilityUpdate} />
       <TournamentImageCard tournament={tournament} onUpdate={handleVisibilityUpdate} />
 
-      <div className="flex gap-6 border-b border-white/5">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`pb-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
-              activeTab === tab
-                ? "text-white border-green-500"
-                : "text-gray-500 border-transparent hover:text-gray-300"
-            }`}
-          >
-            {tab}
-
-            {tab === "Clubes" && (
-              <span className="ml-1.5 text-[11px] text-gray-600">
-                ({tournamentClubs.length}/{tournament.maxClubs ?? "—"})
-              </span>
-            )}
-
-            {tab === "Partidos" && (
-              <span className="ml-1.5 text-[11px] text-gray-600">
-                ({matches.length})
-              </span>
-            )}
-          </button>
-        ))}
+      <div
+        style={{
+          borderBottom: "1px solid var(--fifa-line)",
+          backgroundColor: "rgba(4,8,14,.6)",
+          borderRadius: "12px 12px 0 0",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
+      >
+        <div className="flex overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  padding: "14px 18px",
+                  fontSize: "13px",
+                  fontWeight: isActive ? 600 : 500,
+                  letterSpacing: ".01em",
+                  color: isActive ? "#fff" : "rgba(255,255,255,.38)",
+                  background: "none",
+                  border: "none",
+                  borderBottom: `2px solid ${isActive ? "var(--fifa-neon)" : "transparent"}`,
+                  marginBottom: "-1px",
+                  boxShadow: isActive ? "0 2px 10px rgba(36,255,122,.15)" : "none",
+                  textShadow: isActive ? "0 0 10px rgba(36,255,122,.25)" : "none",
+                  cursor: "pointer",
+                  transition: "all .15s",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.color = "var(--fifa-neon)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.color = "rgba(255,255,255,.38)";
+                }}
+              >
+                {tab}
+                {tab === "Clubes" && (
+                  <span style={{ marginLeft: "5px", fontSize: "10px", color: "rgba(255,255,255,.3)" }}>
+                    ({tournamentClubs.length}/{tournament.maxClubs ?? "—"})
+                  </span>
+                )}
+                {tab === "Partidos" && (
+                  <span style={{ marginLeft: "5px", fontSize: "10px", color: "rgba(255,255,255,.3)" }}>
+                    ({matches.length})
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {activeTab === "Clubes" && (

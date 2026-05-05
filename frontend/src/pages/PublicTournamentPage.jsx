@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { publicApi } from "../api";
 import ClubAvatar from "../components/ui/ClubAvatar";
+import ProBracket from "../components/ProBracket";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -44,7 +45,11 @@ export default function PublicTournamentPage() {
   const { tournament, clubs, table, recentMatches, allMatches, summary } = data;
 
   const TABS = tournament.format === "cup"
-    ? ["Resumen", "Partidos", "Equipos", "Estadísticas"]
+    ? ["Resumen", "Bracket", "Partidos", "Equipos", "Estadísticas"]
+    : tournament.format === "mixed" && tournament.hasPlayoffs
+    ? ["Resumen", "Tabla de posiciones", "Playoffs", "Partidos", "Equipos", "Estadísticas"]
+    : tournament.format === "mixed"
+    ? ["Resumen", "Tabla de posiciones", "Partidos", "Equipos", "Estadísticas"]
     : ["Resumen", "Tabla de posiciones", "Partidos", "Equipos", "Estadísticas"];
 
   return (
@@ -193,6 +198,8 @@ export default function PublicTournamentPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {activeTab === "Resumen"             && <ResumenTab tournament={tournament} table={table} recentMatches={recentMatches} />}
         {activeTab === "Tabla de posiciones" && <TablaTab table={table} playoffTeams={tournament.hasPlayoffs ? tournament.playoffTeams : 0} />}
+        {activeTab === "Bracket"             && <BracketPublicTab allMatches={allMatches} format={tournament.format} />}
+        {activeTab === "Playoffs"            && <BracketPublicTab allMatches={allMatches} format={tournament.format} />}
         {activeTab === "Partidos"            && <PartidosTab matches={allMatches} />}
         {activeTab === "Equipos"             && <EquiposTab clubs={clubs} table={table} />}
         {activeTab === "Estadísticas"        && <EstadisticasTab table={table} allMatches={allMatches} />}
@@ -1103,6 +1110,29 @@ function StatRankTable({ title, rows, valueKey, unit }) {
             </div>
           ))}
         </GlassCard>
+      )}
+    </div>
+  );
+}
+
+// ─── Bracket public tab ───────────────────────────────────────────────────────
+
+function BracketPublicTab({ allMatches, format }) {
+  const bracketMatches = allMatches.filter((m) =>
+    format === "cup" ? m.phase === "cup" : m.phase === "playoff"
+  );
+
+  const label = format === "cup" ? "Cuadro de torneo" : "Bracket de playoffs";
+
+  return (
+    <div>
+      <SectionTitle>{label}</SectionTitle>
+      {bracketMatches.length === 0 ? (
+        <EmptyState message="El bracket no ha sido generado aún." />
+      ) : (
+        <div style={{ marginTop: "8px" }}>
+          <ProBracket matches={bracketMatches} />
+        </div>
       )}
     </div>
   );
