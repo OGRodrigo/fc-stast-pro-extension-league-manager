@@ -6,7 +6,13 @@
       "Bash(npm install *)",
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\darks\\\\OneDrive\\\\Escritorio\\\\fc-stats-pro-league-manager\" -Recurse -Directory)",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(node -e \"function generateSlug\\(name\\){return name.toLowerCase\\(\\).normalize\\('NFD'\\).replace\\(/[̀-ͯ]/g,''\\).replace\\(/[^a-z0-9]+/g,'-'\\).replace\\(/^-|-$/g,''\\)} console.log\\(generateSlug\\('Liga Premier España 2026'\\)\\)\")"
+      "Bash(node -e \"function generateSlug\\(name\\){return name.toLowerCase\\(\\).normalize\\('NFD'\\).replace\\(/[̀-ͯ]/g,''\\).replace\\(/[^a-z0-9]+/g,'-'\\).replace\\(/^-|-$/g,''\\)} console.log\\(generateSlug\\('Liga Premier España 2026'\\)\\)\")",
+      "Bash(git rm *)",
+      "Bash(node -e \"require\\('dotenv'\\).config\\(\\); const app = require\\('./src/app'\\); console.log\\('app.js OK'\\);\")",
+      "Bash(node -e \"require\\('dotenv'\\).config\\(\\); require\\('./src/index'\\);\")",
+      "Bash(node -e \"require\\('helmet'\\); require\\('express-rate-limit'\\); console.log\\('Paquetes OK'\\);\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
