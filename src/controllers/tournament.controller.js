@@ -132,6 +132,7 @@ exports.updateTournament = async (req, res) => {
     "pointsConfig",
     "description",
     "logoUrl",
+    "publicSlug",
   ];
 
   const update = {};
