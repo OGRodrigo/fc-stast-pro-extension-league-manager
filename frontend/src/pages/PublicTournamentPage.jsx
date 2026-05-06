@@ -64,7 +64,7 @@ export default function PublicTournamentPage() {
           position:           "relative",
           backgroundImage:    "url(/images/stadium.png)",
           backgroundSize:     "cover",
-          backgroundPosition: "center 55%",
+          backgroundPosition: "center 68%",
           backgroundRepeat:   "no-repeat",
         }}
       >
