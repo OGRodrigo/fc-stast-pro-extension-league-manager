@@ -118,7 +118,6 @@ exports.createMatch = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error creando partido.",
-      error: error.message,
     });
   }
 };
@@ -154,7 +153,6 @@ exports.getTournamentMatches = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error obteniendo partidos.",
-      error: error.message,
     });
   }
 };
@@ -185,7 +183,6 @@ exports.getMatchById = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error obteniendo partido.",
-      error: error.message,
     });
   }
 };
@@ -286,7 +283,6 @@ exports.updateMatch = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error actualizando partido.",
-      error: error.message,
     });
   }
 };
@@ -313,7 +309,6 @@ exports.getMatchesByTournament = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error obteniendo partidos del torneo",
-      error: error.message,
     });
   }
 };
@@ -343,7 +338,6 @@ exports.deleteMatch = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error eliminando partido.",
-      error: error.message,
     });
   }
 };

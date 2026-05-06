@@ -121,7 +121,6 @@ exports.getTournamentTable = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error calculando tabla de posiciones.",
-      error: error.message,
     });
   }
 };

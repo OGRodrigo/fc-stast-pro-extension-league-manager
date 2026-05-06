@@ -56,7 +56,6 @@ exports.register = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error creando administrador.",
-      error: error.message,
     });
   }
 };
@@ -101,7 +100,6 @@ exports.login = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error iniciando sesión.",
-      error: error.message,
     });
   }
 };

@@ -83,7 +83,6 @@ exports.createTournament = async (req, res) => {
 
     return res.status(500).json({
       message: "Error creando torneo/liga.",
-      error: error.message,
     });
   }
 };
@@ -121,19 +120,39 @@ exports.getTournamentById = async (req, res) => {
  * PATCH /tournaments/:id
  */
 exports.updateTournament = async (req, res) => {
+  const ALLOWED_FIELDS = [
+    "name",
+    "season",
+    "status",
+    "visibility",
+    "format",
+    "maxClubs",
+    "hasPlayoffs",
+    "playoffTeams",
+    "pointsConfig",
+    "description",
+    "logoUrl",
+  ];
+
+  const update = {};
+  for (const field of ALLOWED_FIELDS) {
+    if (field in req.body) {
+      update[field] = req.body[field];
+    }
+  }
+
+  if (Object.keys(update).length === 0) {
+    return res.status(400).json({ message: "No hay campos válidos para actualizar." });
+  }
+
   const tournament = await Tournament.findOneAndUpdate(
-    {
-      _id: req.params.id,
-      createdBy: req.admin._id,
-    },
-    req.body,
-    { new: true }
+    { _id: req.params.id, createdBy: req.admin._id },
+    update,
+    { new: true, runValidators: true }
   );
 
   if (!tournament) {
-    return res.status(404).json({
-      message: "Torneo no encontrado",
-    });
+    return res.status(404).json({ message: "Torneo no encontrado" });
   }
 
   res.json({ tournament });

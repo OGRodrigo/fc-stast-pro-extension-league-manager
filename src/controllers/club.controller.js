@@ -34,7 +34,6 @@ exports.createClub = async (req, res) => {
 
     return res.status(500).json({
       message: "Error creando club",
-      error: error.message,
     });
   }
 };
@@ -94,7 +93,6 @@ exports.updateClub = async (req, res) => {
 
     return res.status(500).json({
       message: "Error actualizando club",
-      error: error.message,
     });
   }
 };
@@ -122,7 +120,6 @@ exports.getClubById = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error obteniendo club",
-      error: error.message,
     });
   }
 };

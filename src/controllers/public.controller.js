@@ -146,7 +146,6 @@ exports.getPublicTournament = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Error obteniendo datos del torneo.",
-      error: error.message,
     });
   }
 };
