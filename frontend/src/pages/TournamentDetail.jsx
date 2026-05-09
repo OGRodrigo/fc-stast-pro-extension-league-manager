@@ -4,6 +4,7 @@ import { tournamentsApi, matchesApi, clubsApi } from "../api";
 import ClubAvatar from "../components/ui/ClubAvatar";
 import { Modal, ModalActions, ConfirmModal } from "../components/ui/Modal";
 import ProBracket from "../components/ProBracket";
+import TournamentShareModal from "../components/share/TournamentShareModal";
 import {
   generateLeagueRounds,
   generateCupBracket,
@@ -12,6 +13,7 @@ import {
   groupMatchesIntoJornadas,
   getCupRoundName,
   isValidCupSize,
+  calculateMatchWinner,
 } from "../utils/helpers";
 
 const TYPE_LABELS = { league: "Liga", tournament: "Torneo" };
@@ -80,6 +82,7 @@ export default function TournamentDetail() {
 
   const [showEditTournament, setShowEditTournament] = useState(false);
   const [editTournamentError, setEditTournamentError] = useState("");
+  const [shareOpen, setShareOpen] = useState(false);
 
   const [editingMatch, setEditingMatch] = useState(null);
   const [editMatchError, setEditMatchError] = useState("");
@@ -555,13 +558,7 @@ async function handleGenerateNextPlayoffRound() {
     setTournament(res.data.tournament);
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Spinner />
-      </div>
-    );
-  }
+  if (loading) return <TournamentDetailSkeleton />;
 
   if (loadError || !tournament) {
     return (
@@ -597,83 +594,185 @@ async function handleGenerateNextPlayoffRound() {
       </button>
 
       <div
-        className="card px-6 py-5"
+  className="relative overflow-hidden rounded-[32px] px-7 py-7 md:px-9 md:py-8"
+  style={{
+    background:
+      "linear-gradient(135deg, rgba(8,18,28,.96), rgba(5,10,16,.98))",
+    border: "1px solid rgba(36,255,122,.12)",
+    boxShadow:
+      "0 0 0 1px rgba(255,255,255,.02), 0 28px 70px rgba(0,0,0,.55)",
+  }}
+>
+  {/* Glow FX */}
+  <div
+    className="pointer-events-none absolute inset-0"
+    style={{
+      background:
+        "radial-gradient(circle at top left, rgba(36,255,122,.14), transparent 30%), radial-gradient(circle at right, rgba(54,230,255,.10), transparent 28%)",
+    }}
+  />
+
+  {/* Neon Accent */}
+  <div
+    style={{
+      position: "absolute",
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: "4px",
+      background: "var(--fifa-neon)",
+      boxShadow: "0 0 18px var(--fifa-neon)",
+    }}
+  />
+
+  <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+    {/* LEFT */}
+    <div className="flex items-start gap-5">
+      {/* Tournament Logo */}
+      <div
+        className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-3xl border"
         style={{
           borderColor: "rgba(36,255,122,.18)",
-          position: "relative",
-          overflow: "hidden",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01))",
+          boxShadow: "0 0 24px rgba(36,255,122,.08)",
         }}
       >
-        {/* Neon left accent */}
-        <div style={{
-          position: "absolute", left: 0, top: 0, bottom: 0, width: "3px",
-          background: "var(--fifa-neon)",
-          boxShadow: "0 0 14px var(--fifa-neon)",
-        }} />
-
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className={TYPE_BADGE[tournament.type] ?? "badge-tournament"}>
-                {TYPE_LABELS[tournament.type] ?? tournament.type}
-              </span>
-              <span className={STATUS_BADGE[tournament.status] ?? "badge-draft"}>
-                {STATUS_LABELS[tournament.status] ?? tournament.status}
-              </span>
-            </div>
-
-            <h1
-              style={{
-                fontFamily: "var(--font-title)",
-                fontSize: "clamp(1.6rem, 3.5vw, 2.4rem)",
-                fontWeight: 900,
-                color: "#fff",
-                letterSpacing: "1px",
-                textTransform: "uppercase",
-                lineHeight: 1.05,
-              }}
-            >
-              {tournament.name}
-            </h1>
-
-            {allLeaguePlayed && tournament.format !== "cup" && (
-              <p className="text-green-400 text-sm mt-2 font-semibold">
-                ✔ Liga finalizada
-              </p>
-            )}
-
-            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5">
-              <p className="text-gray-500 text-sm">
-                Temporada {tournament.season}
-              </p>
-              <p className="text-gray-500 text-sm">
-                {tournamentClubs.length}/{tournament.maxClubs ?? "—"} equipos
-              </p>
-              <p className="text-gray-500 text-sm">
-                {FORMAT_LABELS[tournament.format] ?? tournament.format ?? "—"}
-              </p>
-              {tournament.hasPlayoffs && (
-                <p style={{ color: "var(--fifa-neon)", fontSize: "0.875rem" }}>
-                  Top {tournament.playoffTeams} → playoffs
-                </p>
-              )}
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              setEditTournamentError("");
-              setShowEditTournament(true);
-            }}
-            className="btn-secondary shrink-0 flex items-center gap-2"
-          >
-            <PencilIcon /> Editar
-          </button>
-        </div>
+        {tournament.logo ? (
+          <img
+            src={tournament.logo}
+            alt={tournament.name}
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <TrophyIcon />
+        )}
       </div>
 
+      {/* Tournament Info */}
+      <div>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span
+            className={
+              TYPE_BADGE[tournament.type] ?? "badge-tournament"
+            }
+          >
+            {TYPE_LABELS[tournament.type] ?? tournament.type}
+          </span>
+
+          <span
+            className={
+              STATUS_BADGE[tournament.status] ?? "badge-draft"
+            }
+          >
+            {STATUS_LABELS[tournament.status] ?? tournament.status}
+          </span>
+        </div>
+
+        <h1
+          style={{
+            fontFamily: "var(--font-title)",
+            fontSize: "clamp(2rem,4vw,3rem)",
+            fontWeight: 900,
+            color: "#fff",
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            lineHeight: 1,
+          }}
+        >
+          {tournament.name}
+        </h1>
+
+        <p
+          className="mt-3 max-w-2xl text-sm"
+          style={{
+            color: "var(--fifa-mute)",
+            fontFamily: "var(--font-ui)",
+          }}
+        >
+          Plataforma competitiva para administrar clubes,
+          calendarios, standings y playoffs inspirados en el
+          ecosistema competitivo de EA FC.
+        </p>
+
+        {/* Meta */}
+        <div className="mt-5 flex flex-wrap gap-3">
+          <MetaBadge
+            label="Temporada"
+            value={tournament.season}
+          />
+
+          <MetaBadge
+            label="Equipos"
+            value={`${tournamentClubs.length}/${tournament.maxClubs ?? "—"}`}
+          />
+
+          <MetaBadge
+            label="Formato"
+            value={
+              FORMAT_LABELS[tournament.format] ??
+              tournament.format ??
+              "—"
+            }
+          />
+
+          {tournament.hasPlayoffs && (
+            <MetaBadge
+              label="Playoffs"
+              value={`Top ${tournament.playoffTeams}`}
+              neon
+            />
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* RIGHT */}
+    <div className="flex flex-wrap items-center gap-3">
+      {tournament.visibility === "public" && tournament.publicSlug && (
+        <button
+          onClick={() => setShareOpen(true)}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: "6px",
+            padding: "8px 14px", borderRadius: "10px",
+            fontSize: "13px", fontWeight: 600,
+            color: "#24ff7a",
+            background: "rgba(36,255,122,.08)",
+            border: "1px solid rgba(36,255,122,.28)",
+            cursor: "pointer", transition: "all .15s",
+            boxShadow: "0 0 14px rgba(36,255,122,.12)",
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+          Compartir
+        </button>
+      )}
+      <button
+        onClick={() => {
+          setEditTournamentError("");
+          setShowEditTournament(true);
+        }}
+        className="btn-secondary flex items-center gap-2"
+      >
+        <PencilIcon />
+        Editar
+      </button>
+    </div>
+  </div>
+</div>
+
+<TournamentShareModal
+  isOpen={shareOpen}
+  onClose={() => setShareOpen(false)}
+  tournament={tournament}
+  table={table}
+/>
+
       <VisibilityBar tournament={tournament} onUpdate={handleVisibilityUpdate} />
-      <TournamentImageCard tournament={tournament} onUpdate={handleVisibilityUpdate} />
+      
 
       <div
         style={{
@@ -867,48 +966,50 @@ function ClubsTab({ tournament, tournamentClubs, clubsToAdd, onAdd, onRemove }) 
           </div>
         ) : (
           <div className="card overflow-hidden">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Club</th>
-                  <th>Abrev.</th>
-                  <th>País</th>
-                  <th></th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {tournamentClubs.map((club) => (
-                  <tr key={club._id}>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <ClubAvatar name={club.name} />
-                        <span className="font-medium text-gray-100">
-                          {club.name}
-                        </span>
-                      </div>
-                    </td>
-
-                    <td>
-                      <span className="text-xs text-green-400 font-bold">
-                        {club.abbr || "—"}
-                      </span>
-                    </td>
-
-                    <td className="text-gray-400">{club.country || "—"}</td>
-
-                    <td className="text-right">
-                      <button
-                        onClick={() => onRemove(club._id)}
-                        className="btn-danger"
-                      >
-                        Quitar
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Club</th>
+                    <th className="hidden sm:table-cell">Abrev.</th>
+                    <th className="hidden sm:table-cell">País</th>
+                    <th></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {tournamentClubs.map((club) => (
+                    <tr key={club._id}>
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <ClubAvatar name={club.name} />
+                          <span className="font-medium text-gray-100">
+                            {club.name}
+                          </span>
+                        </div>
+                      </td>
+
+                      <td className="hidden sm:table-cell">
+                        <span className="text-xs text-green-400 font-bold">
+                          {club.abbr || "—"}
+                        </span>
+                      </td>
+
+                      <td className="hidden sm:table-cell text-gray-400">{club.country || "—"}</td>
+
+                      <td className="text-right">
+                        <button
+                          onClick={() => onRemove(club._id)}
+                          className="btn-danger"
+                        >
+                          Quitar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -930,51 +1031,53 @@ function ClubsTab({ tournament, tournamentClubs, clubsToAdd, onAdd, onRemove }) 
           </div>
         ) : (
           <div className="card overflow-hidden">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Club</th>
-                  <th>Abrev.</th>
-                  <th>País</th>
-                  <th></th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {clubsToAdd.map((club) => (
-                  <tr key={club._id}>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <ClubAvatar name={club.name} dim />
-                        <span className="text-gray-400">{club.name}</span>
-                      </div>
-                    </td>
-
-                    <td>
-                      <span className="text-xs text-green-400 font-bold">
-                        {club.abbr || "—"}
-                      </span>
-                    </td>
-
-                    <td className="text-gray-500">{club.country || "—"}</td>
-
-                    <td className="text-right">
-                      <button
-                        onClick={() => onAdd(club._id)}
-                        className="text-xs px-3 py-1.5 rounded-lg border transition-all"
-                        style={{
-                          color: "var(--fifa-neon)",
-                          borderColor: "rgba(36,255,122,0.20)",
-                          backgroundColor: "rgba(36,255,122,0.06)",
-                        }}
-                      >
-                        + Agregar
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Club</th>
+                    <th className="hidden sm:table-cell">Abrev.</th>
+                    <th className="hidden sm:table-cell">País</th>
+                    <th></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {clubsToAdd.map((club) => (
+                    <tr key={club._id}>
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <ClubAvatar name={club.name} dim />
+                          <span className="text-gray-400">{club.name}</span>
+                        </div>
+                      </td>
+
+                      <td className="hidden sm:table-cell">
+                        <span className="text-xs text-green-400 font-bold">
+                          {club.abbr || "—"}
+                        </span>
+                      </td>
+
+                      <td className="hidden sm:table-cell text-gray-500">{club.country || "—"}</td>
+
+                      <td className="text-right">
+                        <button
+                          onClick={() => onAdd(club._id)}
+                          className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+                          style={{
+                            color: "var(--fifa-neon)",
+                            borderColor: "rgba(36,255,122,0.20)",
+                            backgroundColor: "rgba(36,255,122,0.06)",
+                          }}
+                        >
+                          + Agregar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -985,20 +1088,29 @@ function ClubsTab({ tournament, tournamentClubs, clubsToAdd, onAdd, onRemove }) 
 
 function VisibilityBar({ tournament, onUpdate }) {
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const isPublic = tournament.visibility === "public";
-  const publicUrl = isPublic && tournament.publicSlug
-    ? `${window.location.origin}/public/tournaments/${tournament.publicSlug}`
-    : null;
+
+  const publicUrl =
+    isPublic && tournament.publicSlug
+      ? `${window.location.origin}/public/tournaments/${tournament.publicSlug}`
+      : null;
 
   async function makePublic() {
     const slug = tournament.publicSlug || generateSlug(tournament.name);
+
     setLoading(true);
+
     try {
-      await onUpdate({ visibility: "public", publicSlug: slug });
+      await onUpdate({
+        visibility: "public",
+        publicSlug: slug,
+      });
+
+      toast.success("Torneo publicado correctamente");
     } catch (err) {
-      alert(err.response?.data?.message ?? "Error actualizando visibilidad");
+      toast.error(err.response?.data?.message ?? "Error actualizando visibilidad");
     } finally {
       setLoading(false);
     }
@@ -1006,206 +1118,249 @@ function VisibilityBar({ tournament, onUpdate }) {
 
   async function makePrivate() {
     setLoading(true);
+
     try {
       await onUpdate({ visibility: "private" });
+      toast.success("Torneo privado correctamente");
     } catch (err) {
-      alert(err.response?.data?.message ?? "Error actualizando visibilidad");
+      toast.error(err.response?.data?.message ?? "Error actualizando visibilidad");
     } finally {
       setLoading(false);
     }
   }
 
-  function copyLink() {
-    if (!publicUrl) return;
-    navigator.clipboard.writeText(publicUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  return (
+    <>
+      <div
+        className="card px-5 py-3.5 flex items-center gap-4 flex-wrap"
+        style={{
+          borderColor: isPublic ? "rgba(36,255,122,0.25)" : "var(--fifa-line)",
+          backgroundColor: isPublic ? "rgba(36,255,122,0.03)" : undefined,
+        }}
+      >
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+          <GlobeIcon isPublic={isPublic} />
+
+          <span
+            className="text-xs font-semibold uppercase tracking-wider shrink-0"
+            style={{ color: "var(--fifa-mute)" }}
+          >
+            Visibilidad
+          </span>
+
+          <span
+            className="text-xs px-2 py-0.5 rounded-full font-bold shrink-0"
+            style={
+              isPublic
+                ? {
+                    color: "var(--fifa-neon)",
+                    backgroundColor: "rgba(36,255,122,0.12)",
+                  }
+                : {
+                    color: "var(--fifa-mute)",
+                    backgroundColor: "rgba(255,255,255,0.06)",
+                  }
+            }
+          >
+            {isPublic ? "Público" : "Privado"}
+          </span>
+
+          {publicUrl && (
+            <span
+              className="text-xs truncate hidden sm:block"
+              style={{ color: "var(--fifa-mute)" }}
+              title={publicUrl}
+            >
+              {publicUrl}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {isPublic ? (
+            <>
+              <button
+                onClick={() => setShareOpen(true)}
+                className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+                style={{
+                  color: "var(--fifa-neon)",
+                  borderColor: "rgba(36,255,122,0.30)",
+                  backgroundColor: "rgba(36,255,122,0.06)",
+                }}
+              >
+                Compartir torneo
+              </button>
+
+              <button
+                onClick={makePrivate}
+                disabled={loading}
+                className="btn-danger"
+                style={{ opacity: loading ? 0.5 : 1 }}
+              >
+                {loading ? "Guardando..." : "Hacer privado"}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={makePublic}
+              disabled={loading}
+              className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+              style={{
+                color: "var(--fifa-neon)",
+                borderColor: "rgba(36,255,122,0.30)",
+                backgroundColor: "rgba(36,255,122,0.06)",
+                opacity: loading ? 0.5 : 1,
+              }}
+            >
+              {loading ? "Guardando..." : "Hacer público"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {shareOpen && publicUrl && (
+        <AdminShareModal
+          tournament={tournament}
+          publicUrl={publicUrl}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+function AdminShareModal({ tournament, publicUrl, onClose }) {
+  const shareText = `Sigue el torneo ${tournament.name} en FC Stats Pro League Manager`;
+  const encodedText = encodeURIComponent(`${shareText}: ${publicUrl}`);
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      toast.success("Link copiado");
+    } catch {
+      toast.error("No se pudo copiar el link");
+    }
+  }
+
+  async function nativeShare() {
+    if (!navigator.share) {
+      toast.error("Compartir nativo no disponible en este navegador");
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: tournament.name,
+        text: shareText,
+        url: publicUrl,
+      });
+    } catch {
+      // Usuario canceló compartir
+    }
   }
 
   return (
     <div
-      className="card px-5 py-3.5 flex items-center gap-4 flex-wrap"
+      className="fixed inset-0 z-[9999] flex items-center justify-center px-4"
       style={{
-        borderColor: isPublic ? "rgba(36,255,122,0.25)" : "var(--fifa-line)",
-        backgroundColor: isPublic ? "rgba(36,255,122,0.03)" : undefined,
+        backgroundColor: "rgba(0,0,0,.72)",
+        backdropFilter: "blur(10px)",
       }}
     >
-      <div className="flex items-center gap-2.5 flex-1 min-w-0">
-        <GlobeIcon isPublic={isPublic} />
-        <span
-          className="text-xs font-semibold uppercase tracking-wider shrink-0"
-          style={{ color: "var(--fifa-mute)" }}
-        >
-          Visibilidad
-        </span>
-        <span
-          className="text-xs px-2 py-0.5 rounded-full font-bold shrink-0"
-          style={
-            isPublic
-              ? { color: "var(--fifa-neon)", backgroundColor: "rgba(36,255,122,0.12)" }
-              : { color: "var(--fifa-mute)", backgroundColor: "rgba(255,255,255,0.06)" }
-          }
-        >
-          {isPublic ? "Público" : "Privado"}
-        </span>
-
-        {publicUrl && (
-          <span
-            className="text-xs truncate hidden sm:block"
-            style={{ color: "var(--fifa-mute)" }}
-            title={publicUrl}
-          >
-            {publicUrl}
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 shrink-0">
-        {isPublic ? (
-          <>
-            <button
-              onClick={copyLink}
-              className="text-xs px-3 py-1.5 rounded-lg border transition-all"
-              style={
-                copied
-                  ? {
-                      color: "var(--fifa-neon)",
-                      borderColor: "rgba(36,255,122,0.35)",
-                      backgroundColor: "rgba(36,255,122,0.10)",
-                    }
-                  : {
-                      color: "var(--fifa-mute)",
-                      borderColor: "var(--fifa-line)",
-                      backgroundColor: "rgba(255,255,255,0.03)",
-                    }
-              }
-            >
-              {copied ? "¡Copiado!" : "Copiar link"}
-            </button>
-            <button
-              onClick={makePrivate}
-              disabled={loading}
-              className="btn-danger"
-              style={{ opacity: loading ? 0.5 : 1 }}
-            >
-              {loading ? "Guardando..." : "Hacer privado"}
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={makePublic}
-            disabled={loading}
-            className="text-xs px-3 py-1.5 rounded-lg border transition-all"
-            style={{
-              color: "var(--fifa-neon)",
-              borderColor: "rgba(36,255,122,0.30)",
-              backgroundColor: "rgba(36,255,122,0.06)",
-              opacity: loading ? 0.5 : 1,
-            }}
-          >
-            {loading ? "Guardando..." : "Hacer público"}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TournamentImageCard({ tournament, onUpdate }) {
-  const [loading, setLoading] = useState(false);
-
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      alert("La imagen no puede superar 2 MB.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      setLoading(true);
-      try {
-        await onUpdate({ logo: reader.result });
-      } catch (err) {
-        alert(err.response?.data?.message ?? "Error subiendo imagen");
-      } finally {
-        setLoading(false);
-      }
-    };
-    reader.readAsDataURL(file);
-  }
-
-  async function removeLogo() {
-    setLoading(true);
-    try {
-      await onUpdate({ logo: "" });
-    } catch (err) {
-      alert(err.response?.data?.message ?? "Error quitando imagen");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="card px-5 py-4 flex items-center gap-4 flex-wrap">
-      {/* Preview */}
       <div
-        className="w-12 h-12 rounded-xl border overflow-hidden shrink-0 flex items-center justify-center"
-        style={{ borderColor: "var(--fifa-line)", backgroundColor: "rgba(255,255,255,.04)" }}
+        className="w-full max-w-md rounded-[28px] border p-6"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(13,34,43,.96), rgba(6,16,22,.98))",
+          borderColor: "rgba(36,255,122,.18)",
+          boxShadow:
+            "0 0 0 1px rgba(255,255,255,.03), 0 28px 70px rgba(0,0,0,.65)",
+        }}
       >
-        {tournament.logo ? (
-          <img
-            src={tournament.logo}
-            alt="Logo torneo"
-            className="w-full h-full object-contain"
-          />
-        ) : (
-          <ImageIcon />
-        )}
-      </div>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p
+              style={{
+                fontFamily: "var(--font-title)",
+                color: "var(--fifa-neon)",
+                fontSize: "0.75rem",
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+              }}
+            >
+              Compartir torneo
+            </p>
 
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fifa-mute)" }}>
-          Imagen del torneo
-        </p>
-        <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,.25)" }}>
-          {tournament.logo
-            ? "Imagen cargada · se muestra en la página pública"
-            : "Sin imagen · se mostrará en la página pública"}
-        </p>
-      </div>
+            <h2
+              className="mt-2 text-2xl font-black uppercase"
+              style={{
+                fontFamily: "var(--font-title)",
+                color: "var(--fifa-text)",
+              }}
+            >
+              {tournament.name}
+            </h2>
 
-      <div className="flex items-center gap-2 shrink-0">
-        <label
-          className="text-xs px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
+            <p className="mt-2 text-sm" style={{ color: "var(--fifa-mute)" }}>
+              Comparte la página pública del torneo con jugadores, comunidades
+              o redes sociales.
+            </p>
+          </div>
+
+          <button onClick={onClose} className="btn-secondary">
+            ×
+          </button>
+        </div>
+
+        <div
+          className="mt-5 rounded-2xl border p-3 text-xs break-all"
           style={{
-            color: "var(--fifa-neon)",
-            borderColor: "rgba(36,255,122,.30)",
-            backgroundColor: "rgba(36,255,122,.06)",
-            opacity: loading ? 0.5 : 1,
-            pointerEvents: loading ? "none" : "auto",
+            color: "var(--fifa-mute)",
+            borderColor: "rgba(255,255,255,.08)",
+            backgroundColor: "rgba(255,255,255,.035)",
           }}
         >
-          {loading ? "Guardando..." : tournament.logo ? "Cambiar imagen" : "Subir imagen"}
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={loading}
-          />
-        </label>
+          {publicUrl}
+        </div>
 
-        {tournament.logo && !loading && (
-          <button onClick={removeLogo} className="btn-danger">
-            Quitar
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <button onClick={nativeShare} className="btn-primary">
+            Compartir
           </button>
-        )}
+
+          <button onClick={copyLink} className="btn-secondary">
+            Copiar link
+          </button>
+
+          <a
+            href={`https://wa.me/?text=${encodedText}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-secondary text-center"
+          >
+            WhatsApp
+          </a>
+
+          <a
+            href={`https://twitter.com/intent/tweet?text=${encodedText}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-secondary text-center"
+          >
+            X / Twitter
+          </a>
+        </div>
+
+        <p className="mt-4 text-xs leading-6" style={{ color: "var(--fifa-mute)" }}>
+          Instagram y Discord no permiten compartir web directo de forma fiable
+          desde navegador. En móvil, usa el botón “Compartir” para abrir las apps
+          disponibles.
+        </p>
       </div>
     </div>
   );
 }
+
 
 function ImageIcon() {
   return (
@@ -1225,6 +1380,29 @@ function ImageIcon() {
     </svg>
   );
 }
+
+function TrophyIcon() {
+  return (
+    <svg
+      className="h-10 w-10"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      style={{
+        color: "var(--fifa-neon)",
+        filter: "drop-shadow(0 0 10px rgba(36,255,122,.35))",
+      }}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.5 3h3a1.5 1.5 0 011.5 1.5V6a5 5 0 01-5 5h-.09M7.5 3h-3A1.5 1.5 0 003 4.5V6a5 5 0 005 5h.09m3.91-8v11m0 0l-3 3m3-3l3 3m-3-3H9"
+      />
+    </svg>
+  );
+}
+
 
 function GlobeIcon({ isPublic }) {
   return (
@@ -1477,7 +1655,7 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
       }}
     >
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className={MATCH_STATUS_BADGE[match.status] ?? "badge-scheduled"}>
             {MATCH_STATUS_LABELS[match.status] ?? match.status}
           </span>
@@ -1485,13 +1663,13 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
           <span className="text-xs text-gray-600">{date}</span>
 
           {match.stadium && (
-            <span className="text-xs text-gray-600 truncate">
+            <span className="hidden sm:inline text-xs text-gray-600 truncate">
               {match.stadium}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <span className="text-sm font-semibold text-gray-200 flex-1 text-right truncate">
             {homeLabel}
           </span>
@@ -1506,21 +1684,21 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
         {match.status === "scheduled" && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onMarkPlayed();
             }}
-            className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+            className="text-xs px-2.5 py-1.5 rounded-lg border transition-all whitespace-nowrap"
             style={{
               color: "var(--fifa-neon)",
               borderColor: "rgba(36,255,122,0.20)",
               backgroundColor: "rgba(36,255,122,0.06)",
             }}
           >
-            ✓ Jugado
+            ✓ <span className="hidden sm:inline">Jugado</span>
           </button>
         )}
 
@@ -1529,14 +1707,19 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
             e.stopPropagation();
             onEdit();
           }}
-          className="text-xs px-3 py-1.5 rounded-lg border transition-colors"
+          className="text-xs px-2.5 py-1.5 rounded-lg border transition-colors whitespace-nowrap"
           style={{
             color: "var(--fifa-mute)",
             borderColor: "var(--fifa-line)",
             backgroundColor: "rgba(255,255,255,0.03)",
           }}
         >
-          Editar
+          <span className="hidden sm:inline">Editar</span>
+          <span className="sm:hidden">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
+            </svg>
+          </span>
         </button>
 
         <button
@@ -1544,9 +1727,14 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
             e.stopPropagation();
             onDelete();
           }}
-          className="btn-danger"
+          className="btn-danger whitespace-nowrap"
         >
-          Eliminar
+          <span className="hidden sm:inline">Eliminar</span>
+          <span className="sm:hidden">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+            </svg>
+          </span>
         </button>
       </div>
     </div>
@@ -1588,8 +1776,15 @@ function CupBracketTab({
   if (cupMatches.length === 0) {
     return (
       <div className="card p-10 text-center space-y-4">
-        <p className="text-gray-500 text-sm">El bracket no ha sido generado aún</p>
-        <button onClick={onGenerate} disabled={isGenerating} className="btn-primary mx-auto">
+        <p className="text-gray-500 text-sm">
+          El bracket no ha sido generado aún
+        </p>
+
+        <button
+          onClick={onGenerate}
+          disabled={isGenerating}
+          className="btn-primary mx-auto"
+        >
           {isGenerating ? "Generando..." : "Generar bracket"}
         </button>
       </div>
@@ -1602,6 +1797,7 @@ function CupBracketTab({
   const isFinal = lastRound?.length === 1;
   const finalMatch = isFinal ? lastRound[0] : null;
   const isOver = finalMatch?.status === "played";
+
   const winner = isOver
     ? finalMatch.scoreHome >= finalMatch.scoreAway
       ? finalMatch.homeClub
@@ -1619,79 +1815,294 @@ function CupBracketTab({
           className="btn-primary flex items-center gap-2"
         >
           <CalendarIcon />
-          {isGenerating ? "Generando..." : `Generar ${getCupRoundName(count, rounds.length)} →`}
+          {isGenerating
+            ? "Generando..."
+            : `Generar ${getCupRoundName(count, rounds.length)} →`}
         </button>
       )}
 
-      <div className="card p-6 overflow-x-auto">
-        <div className="flex gap-14 items-stretch min-w-max">
-          {rounds.map((round, rIdx) => {
-            const isLastRound = rIdx === rounds.length - 1;
-            const paddingTop = (Math.pow(2, rIdx) - 1) * 58;
-            const gap = Math.pow(2, rIdx) * 34;
+      <CupBracket
+        matches={cupMatches}
+        count={count}
+      />
+    </div>
+  );
+}
 
-            return (
-              <div key={rIdx} className="relative flex flex-col min-w-[250px]">
-                <p
-                  className="mb-5 text-center text-xs font-bold uppercase tracking-[0.25em]"
-                  style={{ color: "var(--fifa-neon)" }}
-                >
-                  {getCupRoundName(count, rIdx)}
-                </p>
+// Constantes de geometría del bracket
+const SLOT_H = 120;   // px de alto por slot (tarjeta de partido)
+const SLOT_W = 200;   // px de ancho de cada columna
+const CONN_W = 32;    // px de ancho del conector entre columnas
+const LABEL_H = 44;   // px de alto para la etiqueta de ronda
 
-                <div
-                  className="relative flex flex-col"
-                  style={{ gap: `${gap}px`, paddingTop: `${paddingTop}px` }}
-                >
-                  {round.map((match, mIdx) => (
-                    <div key={match._id} className="relative">
-                      <BracketMatchCard
-  match={match}
-  onClick={(m) => handleOpenMatch(m)}
-/>
+function CupBracketSlot({ match, onClick }) {
+  const { isPlayed, homeWon, awayWon } = calculateMatchWinner(match);
 
-                      {!isLastRound && (
-                        <>
-                          <div
-                            className="absolute left-full top-1/2 h-[2px] w-14"
-                            style={{
-                              background:
-                                "linear-gradient(90deg, rgba(36,255,122,.9), rgba(36,255,122,.25))",
-                              boxShadow: "0 0 10px rgba(36,255,122,.65)",
-                            }}
-                          />
+  const handleClick = () => {
+    if (typeof onClick === "function") onClick(match);
+  };
 
-                          <div
-                            className="absolute left-[calc(100%+56px)] top-1/2 w-[2px]"
-                            style={{
-                              height: `${gap / 2 + 74}px`,
-                              transform: mIdx % 2 === 0 ? "translateY(0)" : "translateY(-100%)",
-                              background: "rgba(36,255,122,.55)",
-                              boxShadow: "0 0 12px rgba(36,255,122,.55)",
-                            }}
-                          />
+  const TeamRow = ({ club, score, winner, muted }) => (
+    <div
+      className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg transition-all"
+      style={{
+        background: winner
+          ? "linear-gradient(90deg, rgba(36,255,122,.12), rgba(36,255,122,.04))"
+          : "rgba(255,255,255,.04)",
+        border: winner ? "1px solid rgba(36,255,122,.22)" : "1px solid rgba(255,255,255,.06)",
+        opacity: muted ? 0.48 : 1,
+        borderLeft: winner ? "3px solid var(--fifa-neon)" : "none",
+      }}
+    >
+      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+        <ClubAvatar name={club?.name || "TBD"} logo={club?.logo} small />
+        <span
+          className="text-xs font-bold uppercase truncate"
+          style={{
+            color: winner ? "var(--fifa-neon)" : "var(--fifa-text)",
+          }}
+        >
+          {club?.abbr || club?.name || "TBD"}
+        </span>
+      </div>
+      <span
+        className="text-sm font-black tabular-nums ml-auto"
+        style={{
+          color: winner ? "var(--fifa-neon)" : "var(--fifa-text)",
+        }}
+      >
+        {score ?? "-"}
+      </span>
+    </div>
+  );
 
-                          <div
-                            className="absolute left-[calc(100%+56px)] h-[2px] w-14"
-                            style={{
-                              top:
-                                mIdx % 2 === 0
-                                  ? `calc(50% + ${gap / 2 + 74}px)`
-                                  : `calc(50% - ${gap / 2 + 74}px)`,
-                              background:
-                                "linear-gradient(90deg, rgba(36,255,122,.45), rgba(36,255,122,.85))",
-                              boxShadow: "0 0 10px rgba(36,255,122,.6)",
-                            }}
-                          />
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
+  return (
+    <div
+      onClick={handleClick}
+      className="rounded-xl border transition-all cursor-pointer hover:shadow-lg"
+      style={{
+        width: `${SLOT_W}px`,
+        borderColor: isPlayed ? "rgba(36,255,122,.18)" : "rgba(255,255,255,.08)",
+        background: "linear-gradient(135deg, rgba(9,22,30,.8), rgba(4,8,14,.9))",
+        boxShadow: isPlayed ? "0 0 12px rgba(36,255,122,.12)" : "0 4px 12px rgba(0,0,0,.3)",
+      }}
+    >
+      <div className="flex flex-col gap-1 p-1.5">
+        <TeamRow
+          club={match.homeClub}
+          score={match.scoreHome}
+          winner={homeWon}
+          muted={isPlayed && awayWon}
+        />
+        <TeamRow
+          club={match.awayClub}
+          score={match.scoreAway}
+          winner={awayWon}
+          muted={isPlayed && homeWon}
+        />
+      </div>
+    </div>
+  );
+}
+
+function CupBracketColumn({ title, slots, roundIndex, onMatchClick }) {
+  const blockH = SLOT_H * (1 << roundIndex); // Bitshift is faster than Math.pow for powers of 2
+
+  return (
+    <div className="flex flex-col items-center">
+      <p
+        className="text-[11px] font-black uppercase tracking-[0.4em] mb-3 text-center whitespace-nowrap"
+        style={{
+          color: title === "Final" ? "var(--fifa-neon)" : "rgba(255,255,255,.65)",
+          height: `${LABEL_H}px`,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        {title}
+      </p>
+
+      <div
+        className="flex flex-col relative"
+        style={{
+          gap: `${roundIndex === 0 ? 12 : blockH - SLOT_H}px`,
+        }}
+      >
+        {slots.map((slot, idx) => (
+          <div
+            key={idx}
+            style={{
+              paddingTop: idx === 0 ? 0 : 0,
+              paddingBottom: idx === slots.length - 1 ? 0 : 0,
+            }}
+          >
+            {slot ? (
+              <CupBracketSlot match={slot} onClick={onMatchClick} />
+            ) : (
+              <div
+                className="rounded-lg border flex items-center justify-center text-[10px]"
+                style={{
+                  width: `${SLOT_W}px`,
+                  height: `${SLOT_H}px`,
+                  borderColor: "rgba(36,255,122,.08)",
+                  color: "var(--fifa-mute)",
+                  background: "rgba(255,255,255,.01)",
+                }}
+              >
+                —
               </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CupBracketConnector({ sourceSlots, targetSlots }) {
+  const slotHeight = SLOT_H;
+  const sourceBlockH = slotHeight * Math.pow(2, 1); // Asumiendo que vienen de rondas anteriores
+
+  return (
+    <div
+      className="relative flex-shrink-0"
+      style={{
+        width: `${CONN_W}px`,
+        height: "auto",
+      }}
+    >
+      <svg
+        width={CONN_W}
+        height="100%"
+        style={{
+          overflow: "visible",
+          minHeight: "200px",
+        }}
+      >
+        <g stroke="rgba(36,255,122,0.35)" strokeWidth="2" fill="none">
+          {/* Stubs de conexión simplificados */}
+          {[0, 1].map((i) => {
+            const y = (i + 0.5) * sourceBlockH;
+            return (
+              <g key={`stub-${i}`}>
+                <line x1="0" y1={y} x2={10} y2={y} />
+              </g>
             );
           })}
-        </div>
+          {/* Vertical bar connecting the two stubs */}
+          <line x1="10" y1={sourceBlockH * 0.5} x2="10" y2={sourceBlockH * 1.5} />
+          {/* Final stub to next round */}
+          <line x1="10" y1={sourceBlockH} x2={CONN_W} y2={sourceBlockH} />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function CupBracket({ matches, count, onMatchClick }) {
+  const rounds = groupMatchesIntoCupRounds(matches, count);
+
+  if (!rounds.length) return null;
+
+  const finalRound = rounds[rounds.length - 1] ?? [];
+  const sideRounds = rounds.slice(0, -1);
+
+  const leftRounds = sideRounds.map((round) =>
+    round.slice(0, Math.ceil(round.length / 2))
+  );
+
+  const rightRounds = [...sideRounds]
+    .reverse()
+    .map((round) => round.slice(Math.ceil(round.length / 2)));
+
+  return (
+    <div
+      className="relative overflow-x-auto rounded-[34px] p-8"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(10,22,32,.96), rgba(4,8,14,.98))",
+        border: "1px solid rgba(36,255,122,.12)",
+        boxShadow:
+          "0 0 0 1px rgba(255,255,255,.02), 0 30px 80px rgba(0,0,0,.65)",
+      }}
+    >
+      <div
+        className="relative z-10 flex min-w-max items-center justify-start gap-0"
+        style={{
+          padding: `${LABEL_H + 20}px 20px 20px 20px`,
+        }}
+      >
+        {/* Left side - rondas de afuera hacia adentro */}
+        {leftRounds.map((round, index) => (
+          <div key={`left-group-${index}`} className="flex items-center gap-0">
+            <CupBracketColumn
+              title={getCupRoundName(count, index)}
+              slots={round}
+              roundIndex={index}
+              onMatchClick={onMatchClick}
+            />
+            {index < leftRounds.length - 1 && (
+              <div
+                className="flex-shrink-0"
+                style={{
+                  width: `${CONN_W}px`,
+                  minHeight: "200px",
+                }}
+              />
+            )}
+          </div>
+        ))}
+
+        {/* Final/Current round in the center */}
+        {finalRound.length > 0 && (
+          <div className="flex items-center">
+            {sideRounds.length > 0 && (
+              <div
+                className="flex-shrink-0"
+                style={{
+                  width: `${CONN_W}px`,
+                }}
+              />
+            )}
+            <CupBracketColumn
+              title={getCupRoundName(count, sideRounds.length)}
+              slots={finalRound}
+              roundIndex={sideRounds.length}
+              onMatchClick={onMatchClick}
+            />
+            {sideRounds.length > 0 && (
+              <div
+                className="flex-shrink-0"
+                style={{
+                  width: `${CONN_W}px`,
+                }}
+              />
+            )}
+          </div>
+        )}
+
+        {/* Right side - rondas de adentro hacia afuera (espejo) */}
+        {rightRounds.map((round, index) => {
+          const originalIndex = sideRounds.length - 1 - index;
+          return (
+            <div key={`right-group-${index}`} className="flex items-center gap-0">
+              {index > 0 && (
+                <div
+                  className="flex-shrink-0"
+                  style={{
+                    width: `${CONN_W}px`,
+                  }}
+                />
+              )}
+              <CupBracketColumn
+                title={getCupRoundName(count, originalIndex)}
+                slots={round}
+                roundIndex={originalIndex}
+                onMatchClick={onMatchClick}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1904,29 +2315,48 @@ function PlayoffsTab({
   );
 }
 
+
+
 function BracketMatchCard({ match, onClick }) {
   const isPlayed = match.status === "played";
 
-  const homeWon = isPlayed && match.scoreHome >= match.scoreAway;
-  const awayWon = isPlayed && match.scoreAway > match.scoreHome;
+  const homeWon =
+    isPlayed && Number(match.scoreHome) >= Number(match.scoreAway);
+  const awayWon =
+    isPlayed && Number(match.scoreAway) > Number(match.scoreHome);
+
+  function handleClick() {
+    if (typeof onClick === "function") onClick(match);
+  }
 
   return (
-<div
-  onClick={() => onClick(match)}
-  className="relative z-10 overflow-hidden rounded-2xl border p-4 cursor-pointer hover:scale-[1.02] transition"
+    <div
+      onClick={handleClick}
+      className="group relative z-10 overflow-hidden rounded-3xl border p-4 transition-all duration-300 hover:-translate-y-1"
       style={{
-        borderColor: "rgba(36,255,122,.22)",
+        cursor: typeof onClick === "function" ? "pointer" : "default",
+        borderColor: isPlayed
+          ? "rgba(36,255,122,.22)"
+          : "rgba(255,255,255,.08)",
         background:
-          "linear-gradient(135deg, rgba(7,18,24,.96), rgba(4,8,14,.98))",
-        boxShadow: "0 0 24px rgba(36,255,122,.08)",
+          "linear-gradient(135deg, rgba(9,22,30,.96), rgba(4,8,14,.98))",
+        boxShadow:
+          "0 0 0 1px rgba(255,255,255,.025), 0 18px 42px rgba(0,0,0,.45)",
       }}
     >
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <span className={MATCH_STATUS_BADGE[match.status] ?? "badge-scheduled"}>
           {MATCH_STATUS_LABELS[match.status] ?? match.status}
         </span>
 
-        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-600">
+        <span
+          className="rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-widest"
+          style={{
+            color: "rgba(255,255,255,.38)",
+            backgroundColor: "rgba(255,255,255,.04)",
+            border: "1px solid rgba(255,255,255,.05)",
+          }}
+        >
           R{match.round || 1} · #{(match.order ?? 0) + 1}
         </span>
       </div>
@@ -1935,43 +2365,67 @@ function BracketMatchCard({ match, onClick }) {
         club={match.homeClub}
         score={match.scoreHome}
         winner={homeWon}
+        muted={isPlayed && awayWon}
       />
 
-      <div className="my-2 h-px bg-white/5" />
+      <div
+        className="my-2 h-px"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent)",
+        }}
+      />
 
       <BracketTeamRow
         club={match.awayClub}
         score={match.scoreAway}
         winner={awayWon}
+        muted={isPlayed && homeWon}
       />
     </div>
   );
 }
 
-function BracketTeamRow({ club, score, winner }) {
+function BracketTeamRow({ club, score, winner, muted }) {
   return (
     <div
-      className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2 ${
-        winner ? "bg-green-500/10" : "bg-white/[0.03]"
-      }`}
+      className="flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 transition-all"
+      style={{
+        background: winner
+          ? "linear-gradient(90deg, rgba(36,255,122,.14), rgba(36,255,122,.04))"
+          : "rgba(255,255,255,.035)",
+        border: winner
+          ? "1px solid rgba(36,255,122,.25)"
+          : "1px solid rgba(255,255,255,.04)",
+        opacity: muted ? 0.48 : 1,
+      }}
     >
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2.5">
         <ClubAvatar name={club?.name || "TBD"} logo={club?.logo} small />
 
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-white">
+          <p
+            className="truncate text-sm font-black uppercase"
+            style={{
+              color: winner ? "var(--fifa-neon)" : "var(--fifa-text)",
+              letterSpacing: ".03em",
+            }}
+          >
             {club?.abbr || club?.name || "TBD"}
           </p>
-          <p className="truncate text-[10px] text-gray-500">
+
+          <p className="truncate text-[10px]" style={{ color: "var(--fifa-mute)" }}>
             {club?.name || "Por definir"}
           </p>
         </div>
       </div>
 
       <span
-        className={`text-xl font-black tabular-nums ${
-          winner ? "text-green-400" : "text-white"
-        }`}
+        className="text-2xl font-black tabular-nums"
+        style={{
+          color: winner ? "var(--fifa-neon)" : "var(--fifa-text)",
+          textShadow: winner ? "0 0 14px rgba(36,255,122,.35)" : "none",
+        }}
       >
         {score ?? 0}
       </span>
@@ -2055,21 +2509,50 @@ function LeagueGenerateModal({ clubCount, onGenerate, onClose, isGenerating }) {
 
 function EditTournamentModal({ tournament, error, onSave, onClose }) {
   const [form, setForm] = useState({
-    name: tournament.name ?? "",
-    type: tournament.type ?? "league",
-    format: tournament.format ?? "league",
-    season: tournament.season ?? "",
-    status: tournament.status ?? "draft",
-    maxClubs: tournament.maxClubs ?? 8,
-    playoffTeams: tournament.playoffTeams ?? 0,
-    win: tournament.pointsConfig?.win ?? 3,
-    draw: tournament.pointsConfig?.draw ?? 1,
-    loss: tournament.pointsConfig?.loss ?? 0,
-  });
+  name: tournament.name ?? "",
+  type: tournament.type ?? "league",
+  format: tournament.format ?? "league",
+  season: tournament.season ?? "",
+  status: tournament.status ?? "draft",
+  maxClubs: tournament.maxClubs ?? 8,
+  playoffTeams: tournament.playoffTeams ?? 0,
+  win: tournament.pointsConfig?.win ?? 3,
+  draw: tournament.pointsConfig?.draw ?? 1,
+  loss: tournament.pointsConfig?.loss ?? 0,
+  logo: tournament.logo ?? "",
+});
 
   const [saving, setSaving] = useState(false);
 
   const isMixed = form.format === "mixed";
+
+function handleLogoChange(e) {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (file.size > 2 * 1024 * 1024) {
+    alert("La imagen no puede superar 2 MB.");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    setForm((prev) => ({
+      ...prev,
+      logo: reader.result,
+    }));
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function removeLogo() {
+  setForm((prev) => ({
+    ...prev,
+    logo: "",
+  }));
+}
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -2092,20 +2575,21 @@ function EditTournamentModal({ tournament, error, onSave, onClose }) {
     setSaving(true);
 
     await onSave({
-      name: form.name,
-      type: form.type,
-      format: form.format,
-      season: form.season,
-      status: form.status,
-      maxClubs,
-      hasPlayoffs: isMixed,
-      playoffTeams,
-      pointsConfig: {
-        win: Number(form.win),
-        draw: Number(form.draw),
-        loss: Number(form.loss),
-      },
-    });
+  name: form.name,
+  type: form.type,
+  format: form.format,
+  season: form.season,
+  status: form.status,
+  maxClubs,
+  hasPlayoffs: isMixed,
+  playoffTeams,
+  logo: form.logo,
+  pointsConfig: {
+    win: Number(form.win),
+    draw: Number(form.draw),
+    loss: Number(form.loss),
+  },
+});
 
     setSaving(false);
   }
@@ -2114,7 +2598,10 @@ function EditTournamentModal({ tournament, error, onSave, onClose }) {
     <Modal title="Editar torneo" onClose={onClose}>
       {error && <p className="error-msg mb-4">{error}</p>}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+  onSubmit={handleSubmit}
+  className="max-h-[72vh] space-y-3 overflow-y-auto pr-1"
+>
         <div>
           <label className="label">Nombre *</label>
           <input
@@ -2127,7 +2614,74 @@ function EditTournamentModal({ tournament, error, onSave, onClose }) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div
+  className="rounded-2xl border p-4"
+  style={{
+    borderColor: "rgba(36,255,122,.12)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.01))",
+  }}
+>
+  <p className="label mb-3">Imagen del torneo</p>
+
+  <div className="flex flex-wrap items-center gap-4">
+    <div
+      className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border"
+      style={{
+        borderColor: "rgba(36,255,122,.18)",
+        backgroundColor: "rgba(255,255,255,.04)",
+      }}
+    >
+      {form.logo ? (
+        <img
+          src={form.logo}
+          alt="Logo torneo"
+          className="h-full w-full object-contain"
+        />
+      ) : (
+        <ImageIcon />
+      )}
+    </div>
+
+    <div className="min-w-0 flex-1">
+      <p className="text-sm text-white">
+        {form.logo ? "Imagen cargada" : "Sin imagen cargada"}
+      </p>
+
+      <p className="mt-1 text-xs" style={{ color: "var(--fifa-mute)" }}>
+        Se usará en la portada del torneo y en la página pública.
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <label
+          className="text-xs px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
+          style={{
+            color: "var(--fifa-neon)",
+            borderColor: "rgba(36,255,122,.30)",
+            backgroundColor: "rgba(36,255,122,.06)",
+          }}
+        >
+          {form.logo ? "Cambiar imagen" : "Subir imagen"}
+
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleLogoChange}
+          />
+        </label>
+
+        {form.logo && (
+          <button type="button" onClick={removeLogo} className="btn-danger">
+            Quitar
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">Tipo *</label>
             <select
@@ -2215,7 +2769,7 @@ function EditTournamentModal({ tournament, error, onSave, onClose }) {
         >
           <p className="label mb-3">Puntos por resultado</p>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <div>
               <label className="label">Victoria</label>
               <input
@@ -2557,11 +3111,61 @@ function EditMatchModal({ match, clubs, error, onSave, onClose }) {
   );
 }
 
+function MetaBadge({ label, value, neon }) {
+  return (
+    <div
+      className="rounded-2xl px-4 py-2"
+      style={{
+        background: neon
+          ? "rgba(36,255,122,.08)"
+          : "rgba(255,255,255,.04)",
+        border: neon
+          ? "1px solid rgba(36,255,122,.25)"
+          : "1px solid rgba(255,255,255,.05)",
+      }}
+    >
+      <p
+        className="text-[10px] uppercase tracking-widest"
+        style={{
+          color: "rgba(255,255,255,.35)",
+        }}
+      >
+        {label}
+      </p>
+
+      <p
+        className="mt-1 text-sm font-semibold"
+        style={{
+          color: neon
+            ? "var(--fifa-neon)"
+            : "var(--fifa-text)",
+        }}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function LeagueTable({ table, playoffTeams, champion }) {
   if (!table || table.length === 0) {
     return (
-      <div className="card p-6 text-center text-gray-500 text-sm">
-        No hay datos de tabla aún. Registra partidos jugados para ver los puntos.
+      <div
+        className="rounded-3xl p-10 text-center"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(13,34,43,.88), rgba(6,16,22,.94))",
+          border: "1px solid rgba(36,255,122,0.10)",
+          boxShadow:
+            "0 0 0 1px rgba(255,255,255,0.02), 0 18px 45px rgba(0,0,0,.38)",
+        }}
+      >
+        <p className="text-sm" style={{ color: "var(--fifa-mute)" }}>
+          No hay datos de tabla aún.
+        </p>
+        <p className="mt-1 text-xs" style={{ color: "rgba(255,255,255,.28)" }}>
+          Registra partidos jugados para ver los puntos.
+        </p>
       </div>
     );
   }
@@ -2572,79 +3176,203 @@ function LeagueTable({ table, playoffTeams, champion }) {
     <div className="space-y-4">
       {champion && <WinnerBanner club={champion} />}
 
-      <div className="card overflow-hidden">
-        <div className="p-4 border-b border-white/10 flex items-center justify-between">
-          <h2 className="text-white font-semibold text-sm">Tabla de posiciones</h2>
+      <div
+        className="overflow-hidden rounded-3xl"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(13,34,43,.88), rgba(6,16,22,.96))",
+          border: "1px solid rgba(36,255,122,0.12)",
+          boxShadow:
+            "0 0 0 1px rgba(255,255,255,0.02), 0 18px 50px rgba(0,0,0,.42)",
+        }}
+      >
+        <div
+          className="flex items-center justify-between gap-3 border-b px-5 py-4"
+          style={{ borderColor: "rgba(255,255,255,.08)" }}
+        >
+          <div>
+            <p
+              style={{
+                fontFamily: "var(--font-title)",
+                color: "var(--fifa-text)",
+                fontSize: "1.45rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                lineHeight: 1,
+              }}
+            >
+              Tabla de posiciones
+            </p>
+            <p className="mt-1 text-xs" style={{ color: "var(--fifa-mute)" }}>
+              Ranking competitivo según resultados registrados.
+            </p>
+          </div>
+
           {playoffTeams > 0 && (
-            <span className="text-[11px] px-2 py-0.5 rounded" style={{ color: "var(--fifa-neon)", backgroundColor: "rgba(36,255,122,0.08)" }}>
+            <span
+              className="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider"
+              style={{
+                color: "var(--fifa-neon)",
+                backgroundColor: "rgba(36,255,122,0.08)",
+                border: "1px solid rgba(36,255,122,0.22)",
+              }}
+            >
               Top {playoffTeams} → playoffs
             </span>
           )}
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
+          <table className="w-full min-w-[380px] text-left text-sm">
             <thead>
               <tr style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider text-gray-500 w-8">#</th>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider text-gray-500">Equipo</th>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider text-gray-500 text-center">PJ</th>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider text-gray-500 text-center">G</th>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider text-gray-500 text-center">E</th>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider text-gray-500 text-center">P</th>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider text-gray-500 text-center">GF</th>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider text-gray-500 text-center">GC</th>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider text-gray-500 text-center">DG</th>
-                <th className="px-3 py-2.5 text-[11px] uppercase tracking-wider font-bold text-white text-center">PTS</th>
+                <th className="w-8 px-3 py-3 text-[11px] uppercase tracking-wider text-gray-500">
+                  #
+                </th>
+                <th className="px-3 py-3 text-[11px] uppercase tracking-wider text-gray-500">
+                  Club
+                </th>
+                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                  PJ
+                </th>
+                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                  G
+                </th>
+                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                  E
+                </th>
+                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                  P
+                </th>
+                <th className="hidden sm:table-cell px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                  GF
+                </th>
+                <th className="hidden sm:table-cell px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                  GC
+                </th>
+                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                  DG
+                </th>
+                <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-white">
+                  PTS
+                </th>
               </tr>
             </thead>
 
             <tbody>
               {table.map((row, index) => {
+                const isTopThree = index < 3;
                 const isPlayoff = playoffTeams > 0 && index < playoffTeams;
-                const isLast = isPlayoff && index === playoffTeams - 1;
+                const isLastPlayoff = isPlayoff && index === playoffTeams - 1;
+
+                const diff =
+                  row.goalDifference ??
+                  (Number(row.goalsFor ?? 0) - Number(row.goalsAgainst ?? 0));
 
                 return (
                   <tr
                     key={row.club.id}
-                    className="border-t border-white/5 hover:bg-white/5 transition-colors"
+                    className="transition-colors hover:bg-white/[0.045]"
                     style={{
-                      backgroundColor: isPlayoff ? "rgba(36,255,122,0.04)" : undefined,
-                      borderLeft: isPlayoff ? "2px solid rgba(36,255,122,0.35)" : "2px solid transparent",
-                      borderBottom: isLast ? "1px solid rgba(36,255,122,0.2)" : undefined,
+                      borderTop: "1px solid rgba(255,255,255,.055)",
+                      backgroundColor: isPlayoff
+                        ? "rgba(36,255,122,0.035)"
+                        : "transparent",
+                      borderLeft: isPlayoff
+                        ? "3px solid rgba(36,255,122,0.42)"
+                        : "3px solid transparent",
+                      borderBottom: isLastPlayoff
+                        ? "1px solid rgba(36,255,122,0.22)"
+                        : undefined,
                     }}
                   >
                     <td className="px-3 py-3">
-                      <span className={`font-bold tabular-nums text-sm ${POS_COLOR[index] ?? "text-gray-600"}`}>
+                      <span
+                        className={`text-sm font-black tabular-nums ${
+                          POS_COLOR[index] ?? "text-gray-500"
+                        }`}
+                      >
                         {index + 1}
                       </span>
                     </td>
 
                     <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <ClubAvatar name={row.club.name} logo={row.club.logo} small />
-                        <span className="text-white font-medium">{row.club.name}</span>
-                        {row.club.abbr && (
-                          <span className="text-[11px] font-bold" style={{ color: "var(--fifa-neon)" }}>
-                            {row.club.abbr}
-                          </span>
-                        )}
+                      <div className="flex min-w-0 items-center gap-3">
+                        <ClubAvatar
+                          name={row.club.name}
+                          logo={row.club.logo}
+                          small
+                        />
+
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-gray-100">
+                            {row.club.name}
+                          </p>
+
+                          <div className="mt-0.5 flex items-center gap-2">
+                            {row.club.abbr && (
+                              <span className="text-[11px] font-bold text-green-400">
+                                {row.club.abbr}
+                              </span>
+                            )}
+
+                            {isTopThree && (
+                              <span className="text-[10px] uppercase tracking-wider text-yellow-400/80">
+                                Top {index + 1}
+                              </span>
+                            )}
+
+                            {isPlayoff && (
+                              <span className="text-[10px] uppercase tracking-wider text-green-400/80">
+                                Playoffs
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </td>
 
-                    <td className="px-3 py-3 text-center text-gray-400 tabular-nums">{row.played}</td>
-                    <td className="px-3 py-3 text-center text-green-400 tabular-nums">{row.wins}</td>
-                    <td className="px-3 py-3 text-center text-gray-400 tabular-nums">{row.draws}</td>
-                    <td className="px-3 py-3 text-center text-red-400 tabular-nums">{row.losses}</td>
-                    <td className="px-3 py-3 text-center text-gray-300 tabular-nums">{row.goalsFor}</td>
-                    <td className="px-3 py-3 text-center text-gray-300 tabular-nums">{row.goalsAgainst}</td>
-                    <td className="px-3 py-3 text-center tabular-nums">
-                      <span className={row.goalDifference > 0 ? "text-green-400" : row.goalDifference < 0 ? "text-red-400" : "text-gray-400"}>
-                        {row.goalDifference > 0 ? "+" : ""}{row.goalDifference}
-                      </span>
+                    <td className="px-2 py-3 text-center text-gray-400 tabular-nums">
+                      {row.played}
                     </td>
-                    <td className="px-3 py-3 text-center font-bold text-white tabular-nums text-base">
-                      {row.points}
+                    <td className="px-2 py-3 text-center text-gray-400 tabular-nums">
+                      {row.wins}
+                    </td>
+                    <td className="px-2 py-3 text-center text-gray-400 tabular-nums">
+                      {row.draws}
+                    </td>
+                    <td className="px-2 py-3 text-center text-gray-400 tabular-nums">
+                      {row.losses}
+                    </td>
+                    <td className="hidden sm:table-cell px-2 py-3 text-center text-gray-400 tabular-nums">
+                      {row.goalsFor}
+                    </td>
+                    <td className="hidden sm:table-cell px-2 py-3 text-center text-gray-400 tabular-nums">
+                      {row.goalsAgainst}
+                    </td>
+                    <td
+                      className={`px-2 py-3 text-center font-semibold tabular-nums ${
+                        diff > 0
+                          ? "text-green-400"
+                          : diff < 0
+                          ? "text-red-400"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {diff > 0 ? `+${diff}` : diff}
+                    </td>
+
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className="rounded-xl px-3 py-1 text-lg font-black tabular-nums"
+                        style={{
+                          color: "var(--fifa-text)",
+                          backgroundColor: "rgba(255,255,255,.055)",
+                          border: "1px solid rgba(255,255,255,.06)",
+                        }}
+                      >
+                        {row.points}
+                      </span>
                     </td>
                   </tr>
                 );
@@ -2652,6 +3380,18 @@ function LeagueTable({ table, playoffTeams, champion }) {
             </tbody>
           </table>
         </div>
+
+        {playoffTeams > 0 && (
+          <div
+            className="border-t px-5 py-3 text-xs"
+            style={{
+              borderColor: "rgba(255,255,255,.08)",
+              color: "var(--fifa-mute)",
+            }}
+          >
+            La zona marcada en verde indica los clubes clasificados a playoffs.
+          </div>
+        )}
       </div>
     </div>
   );
@@ -2741,7 +3481,11 @@ function BracketTab({
         </button>
       )}
 
-      <ProBracket matches={cupMatches} />
+      <CupBracket
+  matches={cupMatches}
+  count={count}
+  onMatchClick={onEdit}
+/>
     </div>
   );
 }
@@ -2761,6 +3505,110 @@ function CalendarIcon() {
         d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
       />
     </svg>
+  );
+}
+
+function SkeletonPulse({ className = "", style = {} }) {
+  return (
+    <div
+      className={`animate-pulse rounded ${className}`}
+      style={{ backgroundColor: "rgba(255,255,255,0.05)", ...style }}
+    />
+  );
+}
+
+function TournamentDetailSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Back button ghost */}
+      <SkeletonPulse style={{ width: 72, height: 14, borderRadius: 6 }} />
+
+      {/* Hero card */}
+      <div
+        className="relative overflow-hidden rounded-[32px] px-7 py-7 md:px-9 md:py-8"
+        style={{
+          background: "linear-gradient(135deg, rgba(8,18,28,.96), rgba(5,10,16,.98))",
+          border: "1px solid rgba(36,255,122,.10)",
+          boxShadow: "0 0 0 1px rgba(255,255,255,.02), 0 28px 70px rgba(0,0,0,.55)",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute", left: 0, top: 0, bottom: 0, width: 4,
+            background: "rgba(36,255,122,.25)",
+          }}
+        />
+        <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+          {/* Left */}
+          <div className="flex items-start gap-5">
+            {/* Logo placeholder */}
+            <SkeletonPulse style={{ width: 96, height: 96, borderRadius: 24, flexShrink: 0 }} />
+            <div className="space-y-3 flex-1">
+              {/* Badges */}
+              <div className="flex gap-2">
+                <SkeletonPulse style={{ width: 52, height: 20, borderRadius: 20 }} />
+                <SkeletonPulse style={{ width: 68, height: 20, borderRadius: 20 }} />
+              </div>
+              {/* Title */}
+              <SkeletonPulse style={{ width: 260, height: 36, borderRadius: 8 }} />
+              {/* Description */}
+              <SkeletonPulse style={{ width: "90%", height: 13, borderRadius: 6 }} />
+              <SkeletonPulse style={{ width: "70%", height: 13, borderRadius: 6 }} />
+              {/* Meta badges */}
+              <div className="flex flex-wrap gap-3 pt-1">
+                <SkeletonPulse style={{ width: 80, height: 32, borderRadius: 12 }} />
+                <SkeletonPulse style={{ width: 80, height: 32, borderRadius: 12 }} />
+                <SkeletonPulse style={{ width: 80, height: 32, borderRadius: 12 }} />
+              </div>
+            </div>
+          </div>
+          {/* Right: edit button ghost */}
+          <SkeletonPulse style={{ width: 90, height: 36, borderRadius: 10, flexShrink: 0 }} />
+        </div>
+      </div>
+
+      {/* Visibility bar ghost */}
+      <SkeletonPulse style={{ height: 52, borderRadius: 16 }} />
+
+      {/* Tab bar ghost */}
+      <div
+        style={{
+          borderBottom: "1px solid var(--fifa-line)",
+          backgroundColor: "rgba(4,8,14,.6)",
+          borderRadius: "12px 12px 0 0",
+          padding: "0 4px",
+          display: "flex", gap: 8,
+        }}
+      >
+        {[90, 70, 85].map((w, i) => (
+          <SkeletonPulse key={i} style={{ width: w, height: 14, margin: "14px 4px", borderRadius: 6 }} />
+        ))}
+      </div>
+
+      {/* Content: 4 club card skeletons */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="animate-pulse rounded-3xl p-5"
+            style={{
+              background: "linear-gradient(180deg, rgba(13,34,43,.88), rgba(6,16,22,.94))",
+              border: "1px solid rgba(36,255,122,.08)",
+              boxShadow: "0 0 0 1px rgba(255,255,255,.02), 0 12px 30px rgba(0,0,0,.35)",
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <SkeletonPulse style={{ width: 56, height: 56, borderRadius: 14, flexShrink: 0 }} />
+              <div className="flex-1 space-y-2">
+                <SkeletonPulse style={{ width: "60%", height: 16, borderRadius: 6 }} />
+                <SkeletonPulse style={{ width: "40%", height: 12, borderRadius: 6 }} />
+              </div>
+              <SkeletonPulse style={{ width: 64, height: 28, borderRadius: 8, flexShrink: 0 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
 
 const authRoutes = require("./routes/auth.routes");
 const clubRoutes = require("./routes/club.routes");
@@ -10,6 +9,12 @@ const tournamentRoutes = require("./routes/tournament.routes");
 const matchRoutes = require("./routes/match.routes");
 const aiRoutes = require("./routes/ai.routes");
 const publicRoutes = require("./routes/public.routes");
+const Tournament = require("./models/Tournament");
+const {
+  generalLimiter,
+  authLimiter,
+  aiLimiter,
+} = require("./middlewares/rateLimiter");
 
 const app = express();
 
@@ -39,30 +44,6 @@ app.use(
 );
 
 // ── Rate limiting ────────────────────────────────────────────────────────────
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: "Demasiadas solicitudes. Intenta más tarde." },
-});
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: "Demasiados intentos de autenticación. Intenta más tarde." },
-});
-
-const aiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: "Límite de análisis de imágenes alcanzado. Espera un momento." },
-});
-
 app.use(generalLimiter);
 
 // ── Body parsing ────────────────────────────────────────────────────────────
@@ -80,6 +61,38 @@ app.get("/", (req, res) => {
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", service: "fc-stats-pro-league-manager-api" });
+});
+
+// ── OG tag middleware (bots) ─────────────────────────────────────────────────
+const BOT_UA = /discordbot|whatsapp|telegrambot|twitterbot|slackbot|facebot|linkedinbot|googlebot/i;
+
+const FORMAT_LABELS = { league: "Liga", cup: "Copa", mixed: "Liga + Playoffs" };
+
+app.get("/public/tournaments/:slug", async (req, res, next) => {
+  if (!BOT_UA.test(req.headers["user-agent"] || "")) return next();
+  try {
+    const t = await Tournament.findOne({ publicSlug: req.params.slug, visibility: "public" });
+    if (!t) return next();
+    const origin = `${req.protocol}://${req.get("host")}`;
+    const url  = `${origin}/public/tournaments/${t.publicSlug}`;
+    const desc = `${FORMAT_LABELS[t.format] ?? t.format} · Temporada ${t.season} · Sigue tabla, bracket y resultados en tiempo real`;
+    const safeTitle = t.name.replace(/"/g, "&quot;");
+    const safeDesc  = desc.replace(/"/g, "&quot;");
+    res.set("Content-Type", "text/html; charset=utf-8").send(`<!DOCTYPE html><html lang="es"><head>
+<meta charset="utf-8">
+<title>${safeTitle} — FC Stats Pro</title>
+<meta property="og:title" content="${safeTitle}">
+<meta property="og:description" content="${safeDesc}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${url}">
+${t.logo ? `<meta property="og:image" content="${t.logo}">` : ""}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${safeTitle}">
+<meta name="twitter:description" content="${safeDesc}">
+${t.logo ? `<meta name="twitter:image" content="${t.logo}">` : ""}
+<meta http-equiv="refresh" content="0;url=${url}">
+</head><body></body></html>`);
+  } catch { next(); }
 });
 
 // ── Routes ──────────────────────────────────────────────────────────────────

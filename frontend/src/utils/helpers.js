@@ -94,16 +94,16 @@ export function groupMatchesIntoCupRounds(matches, clubCount) {
 }
 
 // Round name by position from start (not from end), given total club count.
-// clubCount=8, roundIndex=0 → "Cuartos de final"
-// clubCount=8, roundIndex=1 → "Semifinales"
+// clubCount=8, roundIndex=0 → "Cuartos"
+// clubCount=8, roundIndex=1 → "Semifinal"
 // clubCount=8, roundIndex=2 → "Final"
 export function getCupRoundName(clubCount, roundIndex) {
   const totalRounds = Math.log2(clubCount); // 4→2, 8→3, 16→4
   const fromEnd = totalRounds - roundIndex;
   if (fromEnd <= 1) return "Final";
-  if (fromEnd <= 2) return "Semifinales";
-  if (fromEnd <= 3) return "Cuartos de final";
-  return "Octavos de final";
+  if (fromEnd <= 2) return "Semifinal";
+  if (fromEnd <= 3) return "Cuartos";
+  return "Octavos";
 }
 
 // Group league matches into jornadas (rounds) by date proximity.
@@ -133,4 +133,13 @@ export function getRoundName(clubCount) {
 
 export function isValidCupSize(count) {
   return [4, 8, 16].includes(count);
+}
+
+export function calculateMatchWinner(match) {
+  const isPlayed = match.status === "played";
+  return {
+    isPlayed,
+    homeWon: isPlayed && Number(match.scoreHome) >= Number(match.scoreAway),
+    awayWon: isPlayed && Number(match.scoreAway) > Number(match.scoreHome),
+  };
 }

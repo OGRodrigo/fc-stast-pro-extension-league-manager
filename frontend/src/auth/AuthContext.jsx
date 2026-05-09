@@ -3,6 +3,10 @@ import client from "../api/client";
 
 const AuthContext = createContext(null);
 
+function applyBrandingColor(color) {
+  document.documentElement.style.setProperty("--fifa-neon", color ?? "#24ff7a");
+}
+
 const TOKEN_KEY = "lm_token";
 const ADMIN_KEY = "lm_admin";
 
@@ -26,6 +30,7 @@ export function AuthProvider({ children }) {
     localStorage.setItem(ADMIN_KEY, JSON.stringify(newAdmin));
     setToken(newToken);
     setAdmin(newAdmin);
+    applyBrandingColor(newAdmin?.branding?.primaryColor);
   }, []);
 
   useEffect(() => {
@@ -41,6 +46,7 @@ export function AuthProvider({ children }) {
         const freshAdmin = data.admin;
         localStorage.setItem(ADMIN_KEY, JSON.stringify(freshAdmin));
         setAdmin(freshAdmin);
+        applyBrandingColor(freshAdmin?.branding?.primaryColor);
       })
       .catch(() => {
         clearSession();
@@ -72,7 +78,13 @@ export function AuthProvider({ children }) {
     clearSession();
   }, [clearSession]);
 
-  const value = { token, admin, loading, login, register, logout };
+  const updateAdmin = useCallback((newAdmin) => {
+    localStorage.setItem(ADMIN_KEY, JSON.stringify(newAdmin));
+    setAdmin(newAdmin);
+    applyBrandingColor(newAdmin?.branding?.primaryColor);
+  }, []);
+
+  const value = { token, admin, loading, login, register, logout, updateAdmin };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

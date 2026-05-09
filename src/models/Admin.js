@@ -30,6 +30,14 @@ const adminSchema = new mongoose.Schema(
       enum: ["admin"],
       default: "admin",
     },
+
+    branding: {
+      leagueName: { type: String, default: "", trim: true },
+      primaryColor: { type: String, default: "#24ff7a" },
+    },
+
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false },
   },
   {
     timestamps: true,

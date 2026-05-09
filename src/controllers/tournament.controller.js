@@ -131,7 +131,7 @@ exports.updateTournament = async (req, res) => {
     "playoffTeams",
     "pointsConfig",
     "description",
-    "logoUrl",
+    "logo",
     "publicSlug",
   ];
 

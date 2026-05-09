@@ -43,26 +43,22 @@ const EMPTY_FORM = {
   date: toDatetimeLocal(),
   stadium: "",
   phase: "league",
-  // Ataque
   possessionHome: "",
   possessionAway: "",
   shotsHome: "",
   shotsAway: "",
   shotsOnTargetHome: "",
   shotsOnTargetAway: "",
-  // Pases
   passesHome: "",
   passesAway: "",
   passesCompletedHome: "",
   passesCompletedAway: "",
-  // Defensa
   tacklesHome: "",
   tacklesAway: "",
   recoveriesHome: "",
   recoveriesAway: "",
   cornersHome: "",
   cornersAway: "",
-  // Disciplina
   foulsHome: "",
   foulsAway: "",
   yellowCardsHome: "",
@@ -141,7 +137,6 @@ export default function ImportMatchImage() {
 
       const md = data.matchDraft || {};
       const s = md.stats || {};
-
       const sv = (v) => (v != null ? v : "");
 
       setForm({
@@ -153,32 +148,28 @@ export default function ImportMatchImage() {
         date: toDatetimeLocal(),
         stadium: "",
         phase: "league",
-        // Ataque
         possessionHome:    sv(s.possessionHome),
         possessionAway:    sv(s.possessionAway),
         shotsHome:         sv(s.shotsHome),
         shotsAway:         sv(s.shotsAway),
         shotsOnTargetHome: sv(s.shotsOnTargetHome),
         shotsOnTargetAway: sv(s.shotsOnTargetAway),
-        // Pases
         passesHome:          sv(s.passesHome),
         passesAway:          sv(s.passesAway),
         passesCompletedHome: sv(s.passesCompletedHome),
         passesCompletedAway: sv(s.passesCompletedAway),
-        // Defensa
         tacklesHome:    sv(s.tacklesHome),
         tacklesAway:    sv(s.tacklesAway),
         recoveriesHome: sv(s.recoveriesHome),
         recoveriesAway: sv(s.recoveriesAway),
         cornersHome:    sv(s.cornersHome),
         cornersAway:    sv(s.cornersAway),
-        // Disciplina
-        foulsHome:        sv(s.foulsHome),
-        foulsAway:        sv(s.foulsAway),
-        yellowCardsHome:  sv(s.yellowCardsHome),
-        yellowCardsAway:  sv(s.yellowCardsAway),
-        redCardsHome:     sv(s.redCardsHome),
-        redCardsAway:     sv(s.redCardsAway),
+        foulsHome:       sv(s.foulsHome),
+        foulsAway:       sv(s.foulsAway),
+        yellowCardsHome: sv(s.yellowCardsHome),
+        yellowCardsAway: sv(s.yellowCardsAway),
+        redCardsHome:    sv(s.redCardsHome),
+        redCardsAway:    sv(s.redCardsAway),
       });
 
       setStep("preview");
@@ -269,6 +260,18 @@ export default function ImportMatchImage() {
 
   return (
     <div className="max-w-3xl mx-auto w-full">
+      <style>{`
+        @keyframes drop-glow-pulse {
+          0%,100% { box-shadow: 0 0 0 1px rgba(36,255,122,0.3), 0 0 20px rgba(36,255,122,0.08); }
+          50%      { box-shadow: 0 0 0 1px rgba(36,255,122,0.55), 0 0 32px rgba(36,255,122,0.16); }
+        }
+        .drop-zone-active {
+          animation: drop-glow-pulse 1.4s ease-in-out infinite;
+          border-color: rgba(36,255,122,0.5) !important;
+          background-color: rgba(36,255,122,0.05) !important;
+        }
+      `}</style>
+
       {/* Back */}
       <button
         onClick={() => navigate(`/tournaments/${tournamentId}`)}
@@ -287,8 +290,9 @@ export default function ImportMatchImage() {
       <StepBar step={step} />
 
       {error && (
-        <div className="mt-4 px-4 py-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
-          {error}
+        <div className="mt-4 px-4 py-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-sm flex items-start gap-2.5">
+          <ErrorIcon />
+          <span>{error}</span>
         </div>
       )}
 
@@ -300,11 +304,8 @@ export default function ImportMatchImage() {
             onDrop={onDrop}
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
-            className="card p-10 text-center cursor-pointer transition-all"
-            style={{
-              borderColor: dragging ? "rgba(36,255,122,0.5)" : undefined,
-              backgroundColor: dragging ? "rgba(36,255,122,0.05)" : undefined,
-            }}
+            className={`card p-10 text-center cursor-pointer transition-all${dragging ? " drop-zone-active" : ""}`}
+            style={dragging ? {} : undefined}
           >
             <input
               ref={fileInputRef}
@@ -314,8 +315,10 @@ export default function ImportMatchImage() {
               className="hidden"
               onChange={(e) => addFiles(e.target.files)}
             />
-            <ImageUploadIcon />
-            <p className="text-white font-semibold mt-3">Arrastra imágenes aquí o haz clic</p>
+            <ImageUploadIcon dragging={dragging} />
+            <p className="text-white font-semibold mt-3">
+              {dragging ? "Suelta las imágenes aquí" : "Arrastra imágenes aquí o haz clic"}
+            </p>
             <p className="text-gray-500 text-xs mt-1">JPG · PNG · WEBP · máx 10 imágenes · 10 MB c/u</p>
             <p className="text-gray-600 text-xs mt-3">
               Sube capturas de: resumen, posesión, tiros, pases, defensa, eventos
@@ -323,19 +326,49 @@ export default function ImportMatchImage() {
           </div>
 
           {files.length > 0 && (
-            <div className="grid grid-cols-5 gap-2">
-              {previews.map((url, i) => (
-                <div key={i} className="relative group">
-                  <img src={url} alt="" className="w-full h-16 object-cover rounded-lg border border-white/10" />
-                  <button
-                    onClick={() => removeFile(i)}
-                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 text-white text-xs hidden group-hover:flex items-center justify-center"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  {files.length} imagen{files.length > 1 ? "es" : ""} seleccionada{files.length > 1 ? "s" : ""}
+                </p>
+                <button
+                  onClick={() => { setFiles([]); setPreviews([]); }}
+                  className="text-[10px] text-gray-600 hover:text-red-400 transition-colors"
+                >
+                  Limpiar todo
+                </button>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {previews.map((url, i) => (
+                  <div key={i} className="relative group rounded-lg overflow-hidden border border-white/10" style={{ height: "96px" }}>
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    {/* Overlay with file info */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 px-1">
+                      <span className="text-[9px] text-gray-300 text-center leading-tight truncate w-full text-center">
+                        {files[i]?.name}
+                      </span>
+                      <span className="text-[9px] text-gray-500">
+                        {(files[i]?.size / 1024 / 1024).toFixed(1)} MB
+                      </span>
+                    </div>
+                    {/* Index badge */}
+                    <div
+                      className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                      style={{ background: "rgba(0,0,0,0.7)", color: "rgba(255,255,255,0.6)" }}
+                    >
+                      {i + 1}
+                    </div>
+                    {/* Remove button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/80 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-900/80"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
 
           <div className="flex gap-3 justify-end">
@@ -369,8 +402,8 @@ export default function ImportMatchImage() {
 
           {/* Club detection warning */}
           {(fc.homeClub?.requiresValidation || fc.awayClub?.requiresValidation) && (
-            <div className="px-4 py-3 rounded-lg border border-yellow-500/30 bg-yellow-500/[0.06] text-yellow-400 text-sm flex gap-2">
-              <span className="shrink-0">⚠</span>
+            <div className="px-4 py-3 rounded-lg border border-yellow-500/30 bg-yellow-500/[0.06] text-yellow-400 text-sm flex gap-2.5 items-start">
+              <span className="shrink-0 mt-px">⚠</span>
               <span>Clubes no detectados con certeza. Selecciona manualmente los equipos del torneo.</span>
             </div>
           )}
@@ -395,29 +428,48 @@ export default function ImportMatchImage() {
               />
             </div>
 
-            {/* Score */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">
-                  Goles Local
-                  <ConfBadge confidence={fc.scoreHome?.confidence} requiresValidation={fc.scoreHome?.requiresValidation} />
-                </label>
-                <input
-                  type="number" min="0" max="30"
-                  className="input w-full text-center text-lg font-bold"
-                  {...field("scoreHome")}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">
-                  Goles Visitante
-                  <ConfBadge confidence={fc.scoreAway?.confidence} requiresValidation={fc.scoreAway?.requiresValidation} />
-                </label>
-                <input
-                  type="number" min="0" max="30"
-                  className="input w-full text-center text-lg font-bold"
-                  {...field("scoreAway")}
-                />
+            {/* Score — scoreboard style */}
+            <div>
+              <div className="grid items-end gap-3" style={{ gridTemplateColumns: "1fr auto 1fr" }}>
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1.5">
+                    Goles Local
+                    <ConfBadge confidence={fc.scoreHome?.confidence} requiresValidation={fc.scoreHome?.requiresValidation} />
+                  </label>
+                  <input
+                    type="number" min="0" max="30"
+                    className="input w-full text-center font-black"
+                    style={{ fontSize: "30px", height: "62px", letterSpacing: "-1px" }}
+                    {...field("scoreHome")}
+                  />
+                </div>
+
+                {/* VS separator */}
+                <div className="flex items-center justify-center pb-1.5">
+                  <div
+                    className="px-2.5 py-2 rounded-lg text-[11px] font-bold tracking-widest"
+                    style={{
+                      color: "rgba(255,255,255,0.18)",
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  >
+                    VS
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1.5">
+                    Goles Visitante
+                    <ConfBadge confidence={fc.scoreAway?.confidence} requiresValidation={fc.scoreAway?.requiresValidation} />
+                  </label>
+                  <input
+                    type="number" min="0" max="30"
+                    className="input w-full text-center font-black"
+                    style={{ fontSize: "30px", height: "62px", letterSpacing: "-1px" }}
+                    {...field("scoreAway")}
+                  />
+                </div>
               </div>
             </div>
 
@@ -516,12 +568,13 @@ function ClubField({ label, fc, clubs, fieldProps }) {
         <ConfBadge confidence={fc?.confidence} requiresValidation={fc?.requiresValidation} />
       </label>
       {fc?.value && (
-        <p className="text-[10px] text-gray-600 mb-1">
-          OCR: <span className="text-gray-400">{fc.value}</span>
-        </p>
+        <div className="flex items-center gap-1.5 mb-1.5 px-2 py-1 rounded" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <span className="text-[9px] uppercase tracking-wider text-gray-600 shrink-0">OCR</span>
+          <span className="text-[11px] text-gray-300 truncate font-medium">{fc.value}</span>
+        </div>
       )}
       <select className="input w-full" {...fieldProps}>
-        <option value="">— Seleccionar —</option>
+        <option value="">— Seleccionar club —</option>
         {clubs.map((c) => (
           <option key={c._id} value={c._id}>{c.name}</option>
         ))}
@@ -546,11 +599,12 @@ function StepBar({ step }) {
         <div key={s.id} className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border"
+              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border transition-all"
               style={{
                 borderColor: i <= activeIdx ? "var(--fifa-neon)" : "rgba(255,255,255,0.15)",
                 backgroundColor: i < activeIdx ? "rgba(36,255,122,0.15)" : "transparent",
                 color: i <= activeIdx ? "var(--fifa-neon)" : "var(--fifa-mute)",
+                boxShadow: i === activeIdx ? "0 0 10px rgba(36,255,122,0.25)" : "none",
               }}
             >
               {i < activeIdx ? "✓" : i + 1}
@@ -577,13 +631,12 @@ function StepBar({ step }) {
 
 function OcrSummary({ draft }) {
   const conf = draft?.confidence || {};
-  const pct = (v) => `${Math.round((v || 0) * 100)}%`;
 
   const items = [
-    { label: "Score",   value: pct(conf.score),   color: confColor(conf.score   || 0) },
-    { label: "Clubes",  value: pct(conf.clubs),   color: confColor(conf.clubs   || 0) },
-    { label: "Stats",   value: pct(conf.stats),   color: confColor(conf.stats   || 0) },
-    { label: "General", value: pct(conf.overall), color: confColor(conf.overall || 0) },
+    { label: "Score",   value: conf.score   || 0 },
+    { label: "Clubes",  value: conf.clubs   || 0 },
+    { label: "Stats",   value: conf.stats   || 0 },
+    { label: "General", value: conf.overall || 0 },
   ];
 
   const statsDetected = draft?.matchDraft?.stats
@@ -591,19 +644,50 @@ function OcrSummary({ draft }) {
     : 0;
 
   return (
-    <div className="card p-4 flex flex-wrap gap-x-5 gap-y-2 items-center">
-      <p className="text-xs text-gray-500 font-medium shrink-0">Confianza OCR</p>
-      {items.map((item) => (
-        <div key={item.label} className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-600">{item.label}:</span>
-          <span className="text-xs font-bold" style={{ color: item.color }}>{item.value}</span>
-        </div>
-      ))}
-      {statsDetected > 0 && (
-        <span className="ml-auto text-[10px] text-gray-500">
-          {statsDetected} stat{statsDetected !== 1 ? "s" : ""} detectado{statsDetected !== 1 ? "s" : ""}
-        </span>
-      )}
+    <div className="card p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--fifa-mute)" }}>
+          Confianza OCR
+        </p>
+        {statsDetected > 0 && (
+          <span
+            className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            style={{
+              background: "rgba(36,255,122,0.08)",
+              color: "var(--fifa-neon)",
+              border: "1px solid rgba(36,255,122,0.2)",
+            }}
+          >
+            {statsDetected} stat{statsDetected !== 1 ? "s" : ""} extraído{statsDetected !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+        {items.map((item) => {
+          const color = confColor(item.value);
+          const pct = Math.round(item.value * 100);
+          return (
+            <div key={item.label} className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider">{item.label}</span>
+                <span className="text-[11px] font-bold" style={{ color }}>{pct}%</span>
+              </div>
+              <div className="h-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${pct}%`,
+                    borderRadius: "9999px",
+                    background: color,
+                    boxShadow: `0 0 6px ${color}55`,
+                    transition: "width 0.9s ease",
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -618,13 +702,17 @@ function ChevronLeft() {
   );
 }
 
-function ImageUploadIcon() {
+function ImageUploadIcon({ dragging }) {
   return (
     <div
-      className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto border"
-      style={{ backgroundColor: "rgba(36,255,122,0.08)", borderColor: "rgba(36,255,122,0.2)" }}
+      className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto border transition-all"
+      style={{
+        backgroundColor: dragging ? "rgba(36,255,122,0.14)" : "rgba(36,255,122,0.08)",
+        borderColor: dragging ? "rgba(36,255,122,0.5)" : "rgba(36,255,122,0.2)",
+        boxShadow: dragging ? "0 0 20px rgba(36,255,122,0.2)" : "none",
+      }}
     >
-      <svg className="w-7 h-7" style={{ color: "var(--fifa-neon)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-8 h-8" style={{ color: "var(--fifa-neon)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
       </svg>
     </div>
@@ -643,6 +731,14 @@ function CheckIcon() {
   return (
     <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+    </svg>
+  );
+}
+
+function ErrorIcon() {
+  return (
+    <svg className="w-4 h-4 shrink-0 mt-px" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
     </svg>
   );
 }

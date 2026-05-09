@@ -249,3 +249,138 @@ Antes de escribir código, siempre:
 4. Luego entrega el código completo
 
 Nunca saltarse estos pasos.
+
+
+---
+
+## 🧲 Dirección comercial / visual premium
+
+El producto debe sentirse como una plataforma real, comercial y vendible, no como un panel CRUD.
+
+La experiencia visual debe comunicar:
+
+* Producto SaaS premium
+* Plataforma deportiva competitiva
+* Estética FIFA / EA FC / Champions League
+* Dashboard moderno de datos deportivos
+* Marca seria lista para redes sociales, demos y venta
+
+---
+
+## 🎯 Objetivo visual por pantalla
+
+### Login / Register
+
+Debe ser la entrada comercial del producto.
+
+Prioridad:
+
+* Logo grande protagonista
+* Fondo cinematográfico oscuro
+* Card premium con glass UI
+* Mensaje claro de plataforma
+* Sensación de producto profesional
+
+---
+
+### MainLayout / Header
+
+Debe recordar la marca sin quitar espacio útil.
+
+Prioridad:
+
+* Logo compacto
+* Header bajo
+* Marca visible pero no invasiva
+* Dashboard protagonista
+
+---
+
+### Dashboard
+
+Debe sentirse como centro de control.
+
+Prioridad:
+
+* Métricas claras
+* Cards premium
+* Acciones rápidas visibles
+* Nada de exceso visual
+* Información primero
+
+---
+
+### Torneos / Ligas
+
+Debe sentirse como centro competitivo.
+
+Prioridad:
+
+* Cards de competiciones modernas
+* Estados claros: borrador, activo, finalizado
+* Creación guiada
+* Visual tipo SaaS deportivo
+
+---
+
+### Detalle de torneo
+
+Debe sentirse como portada de competición.
+
+Prioridad:
+
+* Hero premium
+* Nombre del torneo protagonista
+* Tipo, temporada, equipos y formato visibles
+* Tabla, partidos, bracket y playoffs bien jerarquizados
+
+---
+
+### Clubes
+
+Debe sentirse como gestión de equipos competitivos.
+
+Prioridad:
+
+* Cards premium por club
+* Logos visibles
+* Abreviación clara
+* Estética tipo Ultimate Team / esports
+* Evitar apariencia de tabla CRUD básica
+
+---
+
+### Crear partido
+
+Debe sentirse como Match Center.
+
+Prioridad:
+
+* Marcador protagonista
+* Local vs visitante visual
+* Inputs claros
+* Estadísticas opcionales bien ordenadas
+* Sensación de registro oficial de partido
+
+---
+
+### Página pública
+
+Debe verse como vitrina comercial.
+
+Prioridad:
+
+* Compartible por redes
+* Visual premium
+* Sin sensación de admin panel
+* Solo lectura
+* Ideal para mostrar tabla, partidos y campeón
+
+---
+
+## 🧱 Principio visual obligatorio
+
+Cada pantalla debe responder esta pregunta:
+
+```txt
+¿Esto parece un producto real que se puede vender o solo una app funcional?

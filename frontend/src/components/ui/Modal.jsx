@@ -1,39 +1,52 @@
+import { motion } from "framer-motion";
+import { modalContent, modalOverlay } from "../../utils/motionVariants";
+
 export function ConfirmModal({ message, onConfirm, onCancel }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4">
-      <div className="card w-full max-w-sm p-6">
+    <motion.div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      variants={modalOverlay}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      style={{ backgroundColor: "rgba(0,0,0,0.75)" }}
+    >
+      <motion.div
+        className="card w-full max-w-sm p-6"
+        variants={modalContent}
+      >
         <p className="text-white text-center text-sm leading-relaxed mb-6">
           {message}
         </p>
         <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="btn-danger flex-1"
-          >
+          <button type="button" onClick={onCancel} className="btn-danger flex-1">
             Cancelar
           </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="btn-primary flex-1"
-          >
+          <button type="button" onClick={onConfirm} className="btn-primary flex-1">
             Aceptar
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
 export function Modal({ title, children, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="card w-full max-w-xl p-6 relative">
-
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      variants={modalOverlay}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      style={{ backgroundColor: "rgba(0,0,0,0.70)" }}
+    >
+      <motion.div
+        className="card w-full max-w-xl p-6 relative"
+        variants={modalContent}
+      >
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl font-bold text-white">{title}</h2>
-
           <button
             type="button"
             onClick={onClose}
@@ -42,10 +55,9 @@ export function Modal({ title, children, onClose }) {
             ✕
           </button>
         </div>
-
         {children}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -60,12 +72,7 @@ export function ModalActions({ onCancel, saving, label = "Guardar" }) {
       >
         Cancelar
       </button>
-
-      <button
-        type="submit"
-        className="btn-primary"
-        disabled={saving}
-      >
+      <button type="submit" className="btn-primary" disabled={saving}>
         {saving ? "Guardando..." : label}
       </button>
     </div>

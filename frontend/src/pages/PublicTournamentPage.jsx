@@ -1,9 +1,14 @@
 // frontend/src/pages/PublicTournamentPage.jsx
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { motion, AnimatePresence } from "framer-motion";
 import { publicApi } from "../api";
 import ClubAvatar from "../components/ui/ClubAvatar";
 import ProBracket from "../components/ProBracket";
+import LoadingScreenUI from "../components/ui/LoadingScreen";
+import TournamentShareModal from "../components/share/TournamentShareModal";
+import logo from "../assets/logo-league-manager.png";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -17,6 +22,18 @@ const STATUS_COLORS = {
 };
 const POS_COLORS = ["text-yellow-400", "text-gray-300", "text-orange-400"];
 
+const SOCIAL_LINKS = {
+  instagram: "https://instagram.com/",
+  discord:   "https://discord.gg/",
+  x:         "https://x.com/",
+  tiktok:    "https://tiktok.com/",
+};
+
+const NAV_LINKS = [
+  { label: "Inicio",    href: "/" },
+  { label: "Acerca de", href: "/#features" },
+];
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function PublicTournamentPage() {
@@ -25,6 +42,9 @@ export default function PublicTournamentPage() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const [activeTab, setActiveTab] = useState("Resumen");
+  const [shareOpen, setShareOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const handleMatchClick = (match) => setSelectedMatch(match);
 
   useEffect(() => {
     publicApi
@@ -39,7 +59,7 @@ export default function PublicTournamentPage() {
       });
   }, [slug]);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) return <LoadingScreenUI text="Cargando torneo" />;
   if (error || !data) return <ErrorScreen message={error} />;
 
   const { tournament, clubs, table, recentMatches, allMatches, summary } = data;
@@ -52,31 +72,48 @@ export default function PublicTournamentPage() {
     ? ["Resumen", "Tabla de posiciones", "Partidos", "Equipos", "Estadísticas"]
     : ["Resumen", "Tabla de posiciones", "Partidos", "Equipos", "Estadísticas"];
 
+  const shareUrl = `${window.location.origin}/public/tournaments/${tournament.publicSlug}`;
+
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "var(--fifa-bg)" }}>
+      <Helmet>
+        <title>{tournament.name} — FC Stats Pro</title>
+        <meta property="og:title" content={`${tournament.name} — Temporada ${tournament.season}`} />
+        <meta property="og:description" content={`${summary.totalClubs} equipos · ${FORMAT_LABELS[tournament.format] ?? tournament.format} · Sigue tabla, bracket y resultados`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={shareUrl} />
+        {tournament.logo && <meta property="og:image" content={tournament.logo} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${tournament.name} — FC Stats Pro`} />
+        <meta name="twitter:description" content={`${summary.totalClubs} equipos · ${FORMAT_LABELS[tournament.format] ?? tournament.format}`} />
+        {tournament.logo && <meta name="twitter:image" content={tournament.logo} />}
+      </Helmet>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <PublicHeader />
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <section
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: "easeOut", delay: 0.08 }}
         style={{
           position:           "relative",
           backgroundImage:    "url(/images/stadium.png)",
           backgroundSize:     "cover",
-          backgroundPosition: "center 68%",
+          backgroundPosition: "center 66%",
           backgroundRepeat:   "no-repeat",
         }}
       >
         {/* Horizontal overlay */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(to right, rgba(4,8,14,.95) 0%, rgba(4,8,14,.72) 52%, rgba(4,8,14,.28) 100%)",
+          background: "linear-gradient(to right, rgba(4,8,14,.95) 0%, rgba(4,8,14,.72) 30%, rgba(4,8,14,.28) 40%)",
         }} />
         {/* Bottom-to-top fade into bg */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(to top, var(--fifa-bg) 0%, rgba(4,8,14,.62) 28%, transparent 68%)",
+          background: "linear-gradient(to top, var(--fifa-bg) 0%, rgba(22, 36, 63, 0.62) 0%, transparent 15%)",
         }} />
 
         <div
@@ -89,8 +126,8 @@ export default function PublicTournamentPage() {
             <div className="flex items-start gap-5 min-w-0 flex-1">
               {/* Tournament badge */}
               <div style={{
-                flexShrink: 0, width: "80px", height: "80px",
-                borderRadius: "18px",
+                flexShrink: 0, width: "112px", height: "112px",
+                borderRadius: "22px",
                 border: "2px solid rgba(36,255,122,.28)",
                 backgroundColor: "rgba(36,255,122,.07)",
                 backdropFilter: "blur(14px)",
@@ -146,6 +183,14 @@ export default function PublicTournamentPage() {
                   Organizado por Admin
                 </p>
 
+                {/* Powered by */}
+                <div className="flex items-center gap-1.5 mt-2.5">
+                  <img src={logo} alt="" style={{ width: "13px", height: "13px", objectFit: "contain", opacity: 0.4 }} />
+                  <span style={{ fontSize: "9px", color: "rgba(255,255,255,.22)", letterSpacing: ".04em", textTransform: "uppercase" }}>
+                    Powered by FC Stats Pro League Manager
+                  </span>
+                </div>
+
                 {tournament.hasPlayoffs && tournament.format !== "cup" && (
                   <div
                     className="inline-flex items-center gap-1.5 mt-3 text-xs px-2.5 py-1 rounded-lg border"
@@ -162,11 +207,60 @@ export default function PublicTournamentPage() {
               </div>
             </div>
 
-            {/* Right: jornada card */}
-            <JornadaCard summary={summary} allMatches={allMatches} />
+            {/* Right: jornada card + share */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "14px" }}>
+              <JornadaCard summary={summary} allMatches={allMatches} />
+              <button
+                onClick={() => setShareOpen(true)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "7px",
+                  fontSize: "12px", fontWeight: 600, padding: "9px 16px",
+                  borderRadius: "10px", border: "1px solid",
+                  borderColor: "rgba(36,255,122,.3)",
+                  color: "#24ff7a",
+                  backgroundColor: "rgba(36,255,122,.08)",
+                  boxShadow: "0 0 14px rgba(36,255,122,.12)",
+                  cursor: "pointer", transition: "all .18s",
+                  whiteSpace: "nowrap",
+                  backdropFilter: "blur(8px)",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = "rgba(36,255,122,.6)";
+                  e.currentTarget.style.backgroundColor = "rgba(36,255,122,.14)";
+                  e.currentTarget.style.boxShadow = "0 0 20px rgba(36,255,122,.25)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "rgba(36,255,122,.3)";
+                  e.currentTarget.style.backgroundColor = "rgba(36,255,122,.08)";
+                  e.currentTarget.style.boxShadow = "0 0 14px rgba(36,255,122,.12)";
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+                Compartir torneo
+              </button>
+            </div>
           </div>
         </div>
-      </section>
+      </motion.section>
+
+      <TournamentShareModal
+        isOpen={shareOpen}
+        onClose={() => setShareOpen(false)}
+        tournament={tournament}
+        table={table}
+      />
+
+      <AnimatePresence>
+        {selectedMatch && (
+          <MatchDetailOverlay
+            match={selectedMatch}
+            onClose={() => setSelectedMatch(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── Tabs ───────────────────────────────────────────────────────────── */}
       <div
@@ -195,14 +289,33 @@ export default function PublicTournamentPage() {
       </div>
 
       {/* ── Tab content ────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        {activeTab === "Resumen"             && <ResumenTab tournament={tournament} table={table} recentMatches={recentMatches} />}
-        {activeTab === "Tabla de posiciones" && <TablaTab table={table} playoffTeams={tournament.hasPlayoffs ? tournament.playoffTeams : 0} />}
-        {activeTab === "Bracket"             && <BracketPublicTab allMatches={allMatches} format={tournament.format} />}
-        {activeTab === "Playoffs"            && <BracketPublicTab allMatches={allMatches} format={tournament.format} />}
-        {activeTab === "Partidos"            && <PartidosTab matches={allMatches} />}
-        {activeTab === "Equipos"             && <EquiposTab clubs={clubs} table={table} />}
-        {activeTab === "Estadísticas"        && <EstadisticasTab table={table} allMatches={allMatches} />}
+      <div
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(2,6,12,.45), rgba(2,6,12,.65)), url('/images/stadium-tunnel-bg.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="max-w-6xl mx-auto px-4 sm:px-6 py-8"
+          >
+            {activeTab === "Resumen"             && <ResumenTab tournament={tournament} table={table} recentMatches={recentMatches} onMatchClick={handleMatchClick} />}
+            {activeTab === "Tabla de posiciones" && <TablaTab table={table} playoffTeams={tournament.hasPlayoffs ? tournament.playoffTeams : 0} />}
+            {activeTab === "Bracket"             && <BracketPublicTab allMatches={allMatches} format={tournament.format} slug={tournament.publicSlug} />}
+            {activeTab === "Playoffs"            && <BracketPublicTab allMatches={allMatches} format={tournament.format} slug={tournament.publicSlug} />}
+            {activeTab === "Partidos"            && <PartidosTab matches={allMatches} onMatchClick={handleMatchClick} />}
+            {activeTab === "Equipos"             && <EquiposTab clubs={clubs} table={table} />}
+            {activeTab === "Estadísticas"        && <EstadisticasTab table={table} allMatches={allMatches} />}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
@@ -243,13 +356,71 @@ function LockIcon() {
   );
 }
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+function InstagramIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
 
-const NAV_LINKS = [
-  { label: "Inicio",    href: "/" },
-  { label: "Torneos",   href: "#" },
-  { label: "Acerca de", href: "#" },
-];
+function DiscordIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.834 19.834 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.07 13.07 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+    </svg>
+  );
+}
+
+function XIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.841L1.254 2.25H8.08l4.257 5.628 5.907-5.628zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+    </svg>
+  );
+}
+
+function TikTokIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.75a8.27 8.27 0 0 0 4.83 1.56V6.85a4.85 4.85 0 0 1-1.06-.16z"/>
+    </svg>
+  );
+}
+
+// ─── Social link ──────────────────────────────────────────────────────────────
+
+function SocialLink({ href, label, children }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      aria-label={label}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        width: "28px", height: "28px", borderRadius: "7px",
+        border: "1px solid",
+        borderColor: hovered ? "rgba(36,255,122,.38)" : "rgba(255,255,255,.08)",
+        color: hovered ? "var(--fifa-neon)" : "rgba(255,255,255,.38)",
+        backgroundColor: hovered ? "rgba(36,255,122,.08)" : "transparent",
+        textDecoration: "none",
+        transition: "all .18s",
+        boxShadow: hovered ? "0 0 10px rgba(36,255,122,.18)" : "none",
+        flexShrink: 0,
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
 
 function NavLink({ href, children }) {
   const [hovered, setHovered] = useState(false);
@@ -279,92 +450,41 @@ function NavLink({ href, children }) {
   );
 }
 
-function FollowButton() {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <button
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: "6px",
-        fontSize: "12px", fontWeight: 600, padding: "6px 14px",
-        borderRadius: "8px", border: "1px solid",
-        borderColor:     hovered ? "var(--fifa-neon)" : "rgba(36,255,122,.35)",
-        color:           hovered ? "#fff" : "var(--fifa-neon)",
-        backgroundColor: hovered ? "rgba(36,255,122,.14)" : "rgba(36,255,122,.06)",
-        boxShadow:       hovered ? "0 0 12px rgba(36,255,122,.25), 0 0 28px rgba(36,255,122,.10)" : "none",
-        cursor: "pointer", transition: "all .18s",
-        letterSpacing: ".01em", whiteSpace: "nowrap",
-      }}
-    >
-      <StarIcon />
-      Seguir torneo
-    </button>
-  );
-}
 
-function AdminButton() {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <Link
-      to="/login"
-      style={{
-        display: "inline-flex", alignItems: "center", gap: "5px",
-        fontSize: "12px", fontWeight: 500, padding: "6px 12px",
-        borderRadius: "8px", border: "1px solid",
-        borderColor:     hovered ? "rgba(255,255,255,.22)" : "rgba(255,255,255,.10)",
-        color:           hovered ? "#fff" : "var(--fifa-mute)",
-        backgroundColor: hovered ? "rgba(255,255,255,.07)" : "rgba(255,255,255,.03)",
-        textDecoration: "none", transition: "all .18s", whiteSpace: "nowrap",
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <LockIcon />
-      Admin
-    </Link>
-  );
-}
+
 
 function PublicHeader() {
   return (
-    <header style={{
-      position: "sticky", top: 0, zIndex: 50,
-      backgroundColor: "rgba(4,8,14,.88)",
-      borderBottom: "1px solid var(--fifa-line)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
-    }}>
+    <motion.header
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.32, ease: "easeOut" }}
+      style={{
+        position: "sticky", top: 0, zIndex: 50,
+        backgroundColor: "rgba(4,8,14,.88)",
+        borderBottom: "1px solid var(--fifa-line)",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+      }}
+    >
       <div
         className="max-w-6xl mx-auto px-4 sm:px-6"
         style={{ height: "56px", display: "flex", alignItems: "center" }}
       >
         {/* Branding */}
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", flexShrink: 0 }}>
-          <div style={{
-            width: "30px", height: "30px", borderRadius: "8px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "linear-gradient(135deg, var(--fifa-neon) 0%, rgba(36,255,122,.65) 100%)",
-            boxShadow: "0 0 10px rgba(36,255,122,.35)", flexShrink: 0,
-          }}>
-            <span style={{
-              color: "#000", fontWeight: 900, fontSize: "11px",
-              lineHeight: 1, fontFamily: "var(--font-title)", letterSpacing: ".5px",
-            }}>FC</span>
-          </div>
-          <div style={{ lineHeight: 1 }}>
-            <p style={{
-              fontFamily: "var(--font-title)", fontSize: "15px", fontWeight: 700,
-              letterSpacing: "2px", textTransform: "uppercase",
-              color: "var(--fifa-neon)", lineHeight: 1,
-              textShadow: "0 0 8px rgba(36,255,122,.35)",
-            }}>FC STATS PRO</p>
-            <p style={{
-              fontSize: "9px", fontWeight: 500, letterSpacing: "1.5px",
-              textTransform: "uppercase", color: "rgba(255,255,255,.35)",
-              lineHeight: 1, marginTop: "2px",
-            }}>League Manager</p>
-          </div>
+        <a href="/" style={{ display: "flex", alignItems: "center", gap: "0px", textDecoration: "none", flexShrink: 0 }}>
+          <img
+  src={logo}
+  alt="FC Stats Pro League Manager"
+  style={{
+    height: "58px",
+    width: "auto",
+    objectFit: "contain",
+    display: "block",
+    filter: "drop-shadow(0 0 14px rgba(36,255,122,.22))",
+  }}
+/>
+          
         </a>
 
         {/* Separator */}
@@ -378,13 +498,17 @@ function PublicHeader() {
           {NAV_LINKS.map((l) => <NavLink key={l.label} href={l.href}>{l.label}</NavLink>)}
         </nav>
 
-        {/* Actions */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
-          <FollowButton />
-          <AdminButton />
+        {/* Social links — large screens only */}
+        <div className="hidden lg:flex items-center" style={{ gap: "7px", marginRight: "16px" }}>
+          <SocialLink href={SOCIAL_LINKS.instagram} label="Instagram"><InstagramIcon /></SocialLink>
+          <SocialLink href={SOCIAL_LINKS.discord} label="Discord"><DiscordIcon /></SocialLink>
+          <SocialLink href={SOCIAL_LINKS.x} label="X / Twitter"><XIcon /></SocialLink>
+          <SocialLink href={SOCIAL_LINKS.tiktok} label="TikTok"><TikTokIcon /></SocialLink>
         </div>
+
+        
       </div>
-    </header>
+    </motion.header>
   );
 }
 
@@ -395,63 +519,91 @@ function PublicFooter() {
     <footer style={{
       marginTop: "5rem",
       borderTop: "1px solid var(--fifa-line)",
-      backgroundColor: "rgba(4,8,14,.7)",
+      backgroundColor: "rgba(4,8,14,.88)",
     }}>
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-6">
+
+        {/* Main row */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
 
           {/* Branding */}
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-            <div style={{
-              width: "32px", height: "32px", borderRadius: "8px",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "linear-gradient(135deg, var(--fifa-neon) 0%, rgba(36,255,122,.6) 100%)",
-              boxShadow: "0 0 10px rgba(36,255,122,.22)",
-            }}>
-              <span style={{ color: "#000", fontWeight: 900, fontSize: "12px", fontFamily: "var(--font-title)" }}>FC</span>
-            </div>
-            <div style={{ lineHeight: 1 }}>
-              <p style={{
-                fontFamily: "var(--font-title)", fontSize: "14px", fontWeight: 700,
-                letterSpacing: "2px", textTransform: "uppercase",
-                color: "var(--fifa-neon)", lineHeight: 1,
-                textShadow: "0 0 8px rgba(36,255,122,.22)",
-              }}>FC STATS PRO</p>
-              <p style={{
-                fontSize: "9px", letterSpacing: "1.2px", textTransform: "uppercase",
-                color: "rgba(255,255,255,.28)", lineHeight: 1, marginTop: "3px",
-              }}>League Manager</p>
-            </div>
+          <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", flexShrink: 0 }}>
+            <img
+  src={logo}
+  alt="FC Stats Pro League Manager"
+  style={{
+    height: "98px",
+    width: "auto",
+    objectFit: "contain",
+    display: "block",
+    filter: "drop-shadow(0 0 14px rgba(36,255,122,.22))",
+  }}
+/>
+          
           </a>
 
           {/* Description */}
-          <p style={{ fontSize: "12px", color: "rgba(255,255,255,.22)", textAlign: "center" }}>
-            Página pública del torneo · FC Stats Pro League Manager
+          <p style={{ fontSize: "12px", color: "rgba(255,255,255,.28)", textAlign: "center", maxWidth: "260px", lineHeight: 1.6 }}>
+            Tournament platform para ligas y torneos locales · FC Stats Pro League Manager
           </p>
 
-          {/* Admin */}
-          <Link
-            to="/login"
-            style={{ fontSize: "12px", color: "rgba(255,255,255,.22)", textDecoration: "none", transition: "color .18s" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--fifa-mute)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,.22)")}
-          >
-            Panel de administración →
-          </Link>
+          {/* Social + Admin */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px" }}>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <SocialLink href={SOCIAL_LINKS.instagram} label="Instagram"><InstagramIcon /></SocialLink>
+              <SocialLink href={SOCIAL_LINKS.discord} label="Discord"><DiscordIcon /></SocialLink>
+              <SocialLink href={SOCIAL_LINKS.x} label="X / Twitter"><XIcon /></SocialLink>
+              <SocialLink href={SOCIAL_LINKS.tiktok} label="TikTok"><TikTokIcon /></SocialLink>
+            </div>
+            <Link
+              to="/login"
+              style={{ fontSize: "12px", color: "rgba(255,255,255,.22)", textDecoration: "none", transition: "color .18s" }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--fifa-mute)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,.22)")}
+            >
+          
+            </Link>
+          </div>
         </div>
 
-        {/* Bottom row */}
+        {/* Legal links row */}
         <div
-          className="mt-8 pt-5 flex items-center justify-between flex-wrap gap-3"
+          className="mt-6 pt-5 flex flex-wrap items-center justify-between gap-3"
           style={{ borderTop: "1px solid rgba(255,255,255,.05)" }}
         >
+          <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+            {[
+              { label: "Términos de uso",               href: "/legal/terms" },
+              { label: "Privacidad",                    href: "/legal/privacy" },
+              { label: "Descargo de responsabilidad",   href: "/legal/disclaimer" },
+            ].map(({ label, href }) => (
+              <a
+                key={href}
+                href={href}
+                style={{
+                  fontSize: "11px", color: "rgba(255,255,255,.22)",
+                  textDecoration: "none", transition: "color .18s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--fifa-mute)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,.22)")}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
           <p style={{ fontSize: "10px", color: "rgba(255,255,255,.14)" }}>
             © {new Date().getFullYear()} FC Stats Pro · Todos los derechos reservados
           </p>
-          <p style={{ fontSize: "10px", color: "rgba(255,255,255,.14)" }}>
-            Vista pública
-          </p>
         </div>
+
+        {/* Disclaimer */}
+        <p style={{
+          marginTop: "10px",
+          fontSize: "9.5px", color: "rgba(255,255,255,.1)",
+          lineHeight: 1.65, maxWidth: "600px",
+        }}>
+          FC Stats Pro League Manager no está afiliado ni es respaldado por Electronic Arts Inc., EA SPORTS, EA SPORTS FC™ ni ninguna de sus subsidiarias. Todos los nombres de marcas pertenecen a sus respectivos propietarios.
+        </p>
       </div>
     </footer>
   );
@@ -551,26 +703,29 @@ function EmptyState({ message }) {
 
 // ─── Match row ────────────────────────────────────────────────────────────────
 
-function MatchRow({ match }) {
+function MatchRow({ match, onClick }) {
   const isPlayed  = match.status === "played";
   const date      = new Date(match.date).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
   const homeLabel = match.homeClub?.abbr || match.homeClub?.name || "—";
   const awayLabel = match.awayClub?.abbr || match.awayClub?.name || "—";
   const homeFull  = match.homeClub?.name || "—";
   const awayFull  = match.awayClub?.name || "—";
+  const [hovered, setHovered] = useState(false);
 
   return (
     <div
       className="flex items-center gap-3 border-b last:border-0"
+      onClick={() => isPlayed && onClick?.(match)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         padding: "12px 20px",
         borderColor: "rgba(255,255,255,.04)",
         borderLeft: isPlayed ? "2px solid rgba(36,255,122,.22)" : "2px solid transparent",
-        backgroundColor: "transparent",
+        backgroundColor: isPlayed && hovered ? "rgba(36,255,122,.04)" : "transparent",
+        cursor: isPlayed ? "pointer" : "default",
         transition: "background-color .15s",
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,.02)")}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
     >
       <span style={{
         fontSize: "10px", color: "var(--fifa-mute)",
@@ -579,9 +734,10 @@ function MatchRow({ match }) {
 
       <div className="flex flex-1 items-center justify-between gap-2 min-w-0">
         {/* Home */}
-        <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
           <span className="text-sm font-semibold text-gray-200 truncate hidden sm:block" title={homeFull}>{homeFull}</span>
           <span className="text-sm font-bold text-white sm:hidden">{homeLabel}</span>
+          <ClubAvatar name={match.homeClub?.name} logo={match.homeClub?.logo} small />
         </div>
 
         {/* Score */}
@@ -598,13 +754,23 @@ function MatchRow({ match }) {
         </span>
 
         {/* Away */}
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <ClubAvatar name={match.awayClub?.name} logo={match.awayClub?.logo} small />
           <span className="text-sm font-semibold text-gray-200 truncate hidden sm:block" title={awayFull}>{awayFull}</span>
           <span className="text-sm font-bold text-white sm:hidden">{awayLabel}</span>
         </div>
       </div>
 
-      {!isPlayed && (
+      {isPlayed ? (
+        <svg
+          width="13" height="13" viewBox="0 0 24 24" fill="none"
+          stroke={hovered ? "var(--fifa-neon)" : "rgba(255,255,255,.2)"}
+          strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          style={{ flexShrink: 0, transition: "stroke .15s" }}
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      ) : (
         <span style={{
           fontSize: "9px", textTransform: "uppercase", letterSpacing: ".8px",
           color: "rgba(255,255,255,.2)", flexShrink: 0,
@@ -648,89 +814,102 @@ function TabButton({ label, active, onClick }) {
 
 // ─── Resumen tab ──────────────────────────────────────────────────────────────
 
-function ResumenTab({ table, recentMatches }) {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+const cardVariants = {
+  hidden:  { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.28, ease: "easeOut" } },
+};
 
+function ResumenTab({ table, recentMatches, onMatchClick }) {
+  return (
+    <motion.div
+      className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+      variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Tabla de posiciones */}
-      <GlassCard>
-        <CardHeader title="Tabla de posiciones" />
-        {table.length === 0 ? (
-          <div className="p-5">
-            <EmptyState message="Aún no hay partidos jugados para calcular la tabla." />
-          </div>
-        ) : (
-          <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ backgroundColor: "rgba(0,0,0,.28)" }}>
-                  <th className="px-4 py-2.5 text-left text-[10px] uppercase tracking-wider text-gray-500 w-8">#</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wider text-gray-500">Equipo</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] uppercase tracking-wider text-gray-500">PJ</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] uppercase tracking-wider text-gray-500">DG</th>
-                  <th
-                    className="px-3 py-2.5 text-center text-[10px] uppercase tracking-wider font-bold"
-                    style={{ color: "var(--fifa-neon)" }}
-                  >PTS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {table.slice(0, 6).map((row, i) => (
-                  <tr
-                    key={String(row.club.id)}
-                    className="border-t"
-                    style={{ borderColor: "rgba(255,255,255,.04)", backgroundColor: "transparent", transition: "background-color .15s" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,.03)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
-                  >
-                    <td className="px-4 py-3">
-                      <span className={`font-bold text-sm ${POS_COLORS[i] ?? "text-gray-600"}`}>{i + 1}</span>
-                    </td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <ClubAvatar name={row.club.name} logo={row.club.logo} small />
-                        <span className="text-white font-medium truncate">{row.club.name}</span>
-                        {row.club.abbr && (
-                          <span className="text-[10px] font-bold hidden sm:inline" style={{ color: "var(--fifa-neon)" }}>{row.club.abbr}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 text-center text-gray-400 tabular-nums">{row.played}</td>
-                    <td className="px-3 py-3 text-center tabular-nums">
-                      <span className={row.goalDifference > 0 ? "text-green-400" : row.goalDifference < 0 ? "text-red-400" : "text-gray-500"}>
-                        {row.goalDifference > 0 ? "+" : ""}{row.goalDifference}
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-center tabular-nums">
-                      <span style={{ fontFamily: "var(--font-title)", fontSize: "1.05rem", fontWeight: 900, color: "#fff" }}>
-                        {row.points}
-                      </span>
-                    </td>
+      <motion.div variants={cardVariants}>
+        <GlassCard>
+          <CardHeader title="Tabla de posiciones" />
+          {table.length === 0 ? (
+            <div className="p-5">
+              <EmptyState message="Aún no hay partidos jugados para calcular la tabla." />
+            </div>
+          ) : (
+            <>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: "rgba(0,0,0,.28)" }}>
+                    <th className="px-4 py-2.5 text-left text-[10px] uppercase tracking-wider text-gray-500 w-8">#</th>
+                    <th className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wider text-gray-500">Equipo</th>
+                    <th className="px-3 py-2.5 text-center text-[10px] uppercase tracking-wider text-gray-500">PJ</th>
+                    <th className="px-3 py-2.5 text-center text-[10px] uppercase tracking-wider text-gray-500">DG</th>
+                    <th
+                      className="px-3 py-2.5 text-center text-[10px] uppercase tracking-wider font-bold"
+                      style={{ color: "var(--fifa-neon)" }}
+                    >PTS</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {table.length > 6 && (
-              <p className="text-center text-xs py-3 border-t" style={{ borderColor: "rgba(255,255,255,.05)", color: "var(--fifa-mute)" }}>
-                +{table.length - 6} equipos más · ver tab Tabla
-              </p>
-            )}
-          </>
-        )}
-      </GlassCard>
+                </thead>
+                <tbody>
+                  {table.slice(0, 6).map((row, i) => (
+                    <tr
+                      key={String(row.club.id)}
+                      className="border-t"
+                      style={{ borderColor: "rgba(255,255,255,.04)", backgroundColor: "transparent", transition: "background-color .15s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,.03)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                      <td className="px-4 py-3">
+                        <span className={`font-bold text-sm ${POS_COLORS[i] ?? "text-gray-600"}`}>{i + 1}</span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <ClubAvatar name={row.club.name} logo={row.club.logo} medium />
+                          <span className="text-white font-medium truncate">{row.club.name}</span>
+                          {row.club.abbr && (
+                            <span className="text-[10px] font-bold hidden sm:inline" style={{ color: "var(--fifa-neon)" }}>{row.club.abbr}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 text-center text-gray-400 tabular-nums">{row.played}</td>
+                      <td className="px-3 py-3 text-center tabular-nums">
+                        <span className={row.goalDifference > 0 ? "text-green-400" : row.goalDifference < 0 ? "text-red-400" : "text-gray-500"}>
+                          {row.goalDifference > 0 ? "+" : ""}{row.goalDifference}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-center tabular-nums">
+                        <span style={{ fontFamily: "var(--font-title)", fontSize: "1.05rem", fontWeight: 900, color: "#fff" }}>
+                          {row.points}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {table.length > 6 && (
+                <p className="text-center text-xs py-3 border-t" style={{ borderColor: "rgba(255,255,255,.05)", color: "var(--fifa-mute)" }}>
+                  +{table.length - 6} equipos más · ver tab Tabla
+                </p>
+              )}
+            </>
+          )}
+        </GlassCard>
+      </motion.div>
 
       {/* Últimos resultados */}
-      <GlassCard>
-        <CardHeader title="Últimos resultados" />
-        {recentMatches.length === 0 ? (
-          <div className="p-5">
-            <EmptyState message="Aún no hay partidos jugados." />
-          </div>
-        ) : (
-          recentMatches.map((match) => <MatchRow key={match._id} match={match} />)
-        )}
-      </GlassCard>
-    </div>
+      <motion.div variants={cardVariants}>
+        <GlassCard>
+          <CardHeader title="Últimos resultados" />
+          {recentMatches.length === 0 ? (
+            <div className="p-5">
+              <EmptyState message="Aún no hay partidos jugados." />
+            </div>
+          ) : (
+            recentMatches.map((match) => <MatchRow key={match._id} match={match} onClick={onMatchClick} />)
+          )}
+        </GlassCard>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -805,8 +984,8 @@ function TablaTab({ table, playoffTeams }) {
                     <span className={`font-bold text-sm ${POS_COLORS[index] ?? "text-gray-600"}`}>{index + 1}</span>
                   </td>
                   <td className="px-3 py-3">
-                    <div className="flex items-center gap-2">
-                      <ClubAvatar name={row.club.name} logo={row.club.logo} small />
+                    <div className="flex items-center gap-2.5">
+                      <ClubAvatar name={row.club.name} logo={row.club.logo} medium />
                       <span className="text-white font-medium">{row.club.name}</span>
                       {row.club.abbr && (
                         <span className="text-[10px] font-bold" style={{ color: "var(--fifa-neon)" }}>{row.club.abbr}</span>
@@ -841,7 +1020,7 @@ function TablaTab({ table, playoffTeams }) {
 
 // ─── Partidos tab ─────────────────────────────────────────────────────────────
 
-function PartidosTab({ matches }) {
+function PartidosTab({ matches, onMatchClick }) {
   const [filter, setFilter] = useState("all");
 
   if (matches.length === 0) {
@@ -924,13 +1103,13 @@ function PartidosTab({ matches }) {
                     </span>
                   }
                 />
-                {group.map((m) => <MatchRow key={m._id} match={m} />)}
+                {group.map((m) => <MatchRow key={m._id} match={m} onClick={onMatchClick} />)}
               </GlassCard>
             );
           })
         : filtered.filter((m) => m.phase === "league").length > 0 && (
             <GlassCard>
-              {filtered.filter((m) => m.phase === "league").map((m) => <MatchRow key={m._id} match={m} />)}
+              {filtered.filter((m) => m.phase === "league").map((m) => <MatchRow key={m._id} match={m} onClick={onMatchClick} />)}
             </GlassCard>
           )
       }
@@ -939,7 +1118,7 @@ function PartidosTab({ matches }) {
       {otherMatches.length > 0 && (
         <GlassCard>
           <CardHeader title="Copa / Playoffs" />
-          {otherMatches.map((m) => <MatchRow key={m._id} match={m} />)}
+          {otherMatches.map((m) => <MatchRow key={m._id} match={m} onClick={onMatchClick} />)}
         </GlassCard>
       )}
     </div>
@@ -956,12 +1135,18 @@ function EquiposTab({ clubs, table }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <motion.div
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+      initial="hidden"
+      animate="visible"
+    >
       {clubs.map((club) => {
         const row = tableMap.get(club._id.toString());
         return (
-          <div
+          <motion.div
             key={club._id}
+            variants={cardVariants}
             style={{
               background: "linear-gradient(180deg, rgba(13,34,43,.92), rgba(6,16,22,.92))",
               border: "1px solid var(--fifa-line)",
@@ -980,7 +1165,7 @@ function EquiposTab({ clubs, table }) {
           >
             {/* Club header */}
             <div className="flex items-center gap-3 mb-4">
-              <ClubAvatar name={club.name} logo={club.logo} />
+              <ClubAvatar name={club.name} logo={club.logo} large />
               <div className="min-w-0 flex-1">
                 <p className="text-white font-bold text-sm truncate">{club.name}</p>
                 {club.abbr && (
@@ -1027,10 +1212,10 @@ function EquiposTab({ clubs, table }) {
                 paddingTop: "14px", borderTop: "1px solid rgba(255,255,255,.06)", marginTop: "4px",
               }}>Sin partidos</p>
             )}
-          </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }
 
@@ -1095,7 +1280,7 @@ function StatRankTable({ title, rows, valueKey, unit }) {
               style={{ padding: "12px 16px", borderColor: "rgba(255,255,255,.04)" }}
             >
               <span className={`font-bold text-sm w-5 shrink-0 ${POS_COLORS[i] ?? "text-gray-600"}`}>{i + 1}</span>
-              <ClubAvatar name={row.club.name} logo={row.club.logo} small />
+              <ClubAvatar name={row.club.name} logo={row.club.logo} medium />
               <span className="text-white text-sm font-medium flex-1 truncate min-w-0">{row.club.name}</span>
               <span style={{
                 fontFamily: "var(--font-title)", fontSize: "1.2rem", fontWeight: 900,
@@ -1117,7 +1302,7 @@ function StatRankTable({ title, rows, valueKey, unit }) {
 
 // ─── Bracket public tab ───────────────────────────────────────────────────────
 
-function BracketPublicTab({ allMatches, format }) {
+function BracketPublicTab({ allMatches, format, slug }) {
   const bracketMatches = allMatches.filter((m) =>
     format === "cup" ? m.phase === "cup" : m.phase === "playoff"
   );
@@ -1131,7 +1316,7 @@ function BracketPublicTab({ allMatches, format }) {
         <EmptyState message="El bracket no ha sido generado aún." />
       ) : (
         <div style={{ marginTop: "8px" }}>
-          <ProBracket matches={bracketMatches} />
+          <ProBracket matches={bracketMatches} slug={slug} />
         </div>
       )}
     </div>
@@ -1197,30 +1382,6 @@ function JornadaCard({ summary, allMatches }) {
 
 // ─── Loading / Error screens ──────────────────────────────────────────────────
 
-function LoadingScreen() {
-  return (
-    <div style={{
-      minHeight: "100vh", backgroundColor: "var(--fifa-bg)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      <div style={{ textAlign: "center" }}>
-        <div style={{
-          width: "40px", height: "40px",
-          border: "2px solid rgba(36,255,122,.15)",
-          borderTop: "2px solid var(--fifa-neon)",
-          borderRadius: "50%",
-          animation: "spin 0.7s linear infinite",
-          margin: "0 auto 18px",
-        }} />
-        <p style={{
-          fontFamily: "var(--font-title)", fontSize: "12px",
-          letterSpacing: "2.5px", textTransform: "uppercase", color: "var(--fifa-mute)",
-        }}>Cargando torneo...</p>
-      </div>
-    </div>
-  );
-}
-
 function ErrorScreen({ message }) {
   return (
     <div style={{
@@ -1247,6 +1408,350 @@ function ErrorScreen({ message }) {
       >
         Ir al inicio →
       </Link>
+    </div>
+  );
+}
+
+// ─── Match Detail Overlay ─────────────────────────────────────────────────────
+
+function MatchDetailOverlay({ match, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  const s       = match.clubStats || {};
+  const hasStats = Object.values(s).some((v) => v > 0);
+
+  const dateStr = new Date(match.date).toLocaleDateString("es-ES", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric",
+  });
+  const phaseLabel =
+    match.phase === "league"  ? `Jornada ${match.round}` :
+    match.phase === "cup"     ? "Copa" :
+    match.phase === "playoff" ? "Playoff" : "";
+
+  const homeWon = match.scoreHome > match.scoreAway;
+  const awayWon = match.scoreAway > match.scoreHome;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.22 }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 300,
+        backgroundColor: "rgba(2,5,10,.97)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        overflowY: "auto",
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 28 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 16 }}
+        transition={{ duration: 0.28, ease: "easeOut" }}
+        style={{ maxWidth: "820px", margin: "0 auto", padding: "0 16px 80px" }}
+      >
+        {/* ── Top bar ───────────────────────────────────────────────────── */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "20px 0 12px",
+          borderBottom: "1px solid rgba(255,255,255,.06)",
+          marginBottom: "36px",
+        }}>
+          <button
+            onClick={onClose}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "6px",
+              fontSize: "13px", fontWeight: 500, color: "var(--fifa-mute)",
+              background: "none", border: "none", cursor: "pointer",
+              padding: "6px 10px", borderRadius: "8px",
+              transition: "color .15s, background .15s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; e.currentTarget.style.background = "rgba(255,255,255,.06)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--fifa-mute)"; e.currentTarget.style.background = "none"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Volver
+          </button>
+
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
+            <span style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", color: "var(--fifa-neon)" }}>
+              {phaseLabel}
+            </span>
+            <span style={{ fontSize: "11px", color: "rgba(255,255,255,.32)", textTransform: "capitalize" }}>
+              {dateStr}
+            </span>
+            {match.stadium && (
+              <span style={{ fontSize: "10px", color: "rgba(255,255,255,.2)" }}>
+                {match.stadium}
+              </span>
+            )}
+          </div>
+
+          <div style={{ width: "70px" }} />
+        </div>
+
+        {/* ── Score hero ────────────────────────────────────────────────── */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "1fr auto 1fr",
+          alignItems: "center", gap: "20px",
+          marginBottom: "44px",
+        }}>
+          {/* Home */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+            <ClubAvatar name={match.homeClub?.name} logo={match.homeClub?.logo} xlarge />
+            <p style={{
+              fontFamily: "var(--font-title)", fontSize: "clamp(1rem, 3vw, 1.4rem)",
+              fontWeight: 800, textAlign: "center", textTransform: "uppercase",
+              letterSpacing: ".5px",
+              color: homeWon ? "#fff" : "rgba(255,255,255,.5)",
+            }}>
+              {match.homeClub?.name || "Local"}
+            </p>
+            {homeWon && (
+              <span style={{
+                fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px",
+                color: "var(--fifa-neon)", border: "1px solid rgba(36,255,122,.3)",
+                backgroundColor: "rgba(36,255,122,.08)", borderRadius: "5px", padding: "2px 7px",
+              }}>GANADOR</span>
+            )}
+          </div>
+
+          {/* Score */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: "4px",
+              background: "linear-gradient(135deg, rgba(36,255,122,.1), rgba(36,255,122,.04))",
+              border: "1px solid rgba(36,255,122,.18)",
+              borderRadius: "20px", padding: "10px 28px",
+              boxShadow: "0 0 40px rgba(36,255,122,.12), 0 8px 32px rgba(0,0,0,.5)",
+            }}>
+              <span style={{
+                fontFamily: "var(--font-title)", fontSize: "clamp(3rem, 8vw, 5rem)",
+                fontWeight: 900, color: "#fff", lineHeight: 1,
+                textShadow: "0 0 30px rgba(36,255,122,.3)",
+                fontVariantNumeric: "tabular-nums",
+              }}>
+                {match.scoreHome}
+              </span>
+              <span style={{
+                fontFamily: "var(--font-title)", fontSize: "clamp(2rem, 5vw, 3rem)",
+                fontWeight: 900, color: "rgba(36,255,122,.5)", lineHeight: 1, margin: "0 6px",
+              }}>–</span>
+              <span style={{
+                fontFamily: "var(--font-title)", fontSize: "clamp(3rem, 8vw, 5rem)",
+                fontWeight: 900, color: "#fff", lineHeight: 1,
+                textShadow: "0 0 30px rgba(54,230,255,.2)",
+                fontVariantNumeric: "tabular-nums",
+              }}>
+                {match.scoreAway}
+              </span>
+            </div>
+            <span style={{
+              fontSize: "9px", fontWeight: 700, textTransform: "uppercase",
+              letterSpacing: "2px", color: "rgba(255,255,255,.25)",
+            }}>Tiempo reglamentario</span>
+          </div>
+
+          {/* Away */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+            <ClubAvatar name={match.awayClub?.name} logo={match.awayClub?.logo} xlarge />
+            <p style={{
+              fontFamily: "var(--font-title)", fontSize: "clamp(1rem, 3vw, 1.4rem)",
+              fontWeight: 800, textAlign: "center", textTransform: "uppercase",
+              letterSpacing: ".5px",
+              color: awayWon ? "#fff" : "rgba(255,255,255,.5)",
+            }}>
+              {match.awayClub?.name || "Visitante"}
+            </p>
+            {awayWon && (
+              <span style={{
+                fontSize: "9px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px",
+                color: "var(--fifa-neon)", border: "1px solid rgba(36,255,122,.3)",
+                backgroundColor: "rgba(36,255,122,.08)", borderRadius: "5px", padding: "2px 7px",
+              }}>GANADOR</span>
+            )}
+          </div>
+        </div>
+
+        {/* ── Stats section ─────────────────────────────────────────────── */}
+        {hasStats ? (
+          <div style={{
+            background: "linear-gradient(180deg, rgba(13,34,43,.88), rgba(6,16,22,.88))",
+            border: "1px solid var(--fifa-line)",
+            borderRadius: "20px", overflow: "hidden",
+            boxShadow: "0 0 0 1px rgba(36,255,122,.04), 0 16px 40px rgba(0,0,0,.4)",
+          }}>
+            <div style={{
+              padding: "14px 24px",
+              borderBottom: "1px solid var(--fifa-line)",
+              backgroundColor: "rgba(0,0,0,.2)",
+              display: "flex", alignItems: "center", gap: "8px",
+            }}>
+              <span style={{
+                display: "block", width: "3px", height: "14px", borderRadius: "2px",
+                background: "var(--fifa-neon)", boxShadow: "0 0 6px var(--fifa-neon)", flexShrink: 0,
+              }} />
+              <p style={{
+                fontSize: "10px", fontWeight: 700, textTransform: "uppercase",
+                letterSpacing: "1.3px", color: "var(--fifa-mute)",
+              }}>Estadísticas del partido</p>
+            </div>
+
+            <div style={{ padding: "8px 0" }}>
+              {s.possessionHome + s.possessionAway > 0 && (
+                <MatchStatRow
+                  label="Posesión"
+                  homeVal={s.possessionHome} awayVal={s.possessionAway}
+                  unit="%" isBar barColor="var(--fifa-neon)"
+                />
+              )}
+              {s.shotsHome + s.shotsAway > 0 && (
+                <MatchStatRow label="Tiros totales" homeVal={s.shotsHome} awayVal={s.shotsAway} />
+              )}
+              {s.shotsOnTargetHome + s.shotsOnTargetAway > 0 && (
+                <MatchStatRow label="Tiros a puerta" homeVal={s.shotsOnTargetHome} awayVal={s.shotsOnTargetAway} />
+              )}
+              {s.passesHome + s.passesAway > 0 && (
+                <MatchStatRow label="Pases" homeVal={s.passesHome} awayVal={s.passesAway} />
+              )}
+              {s.passesCompletedHome + s.passesCompletedAway > 0 && (
+                <MatchStatRow label="Pases completados" homeVal={s.passesCompletedHome} awayVal={s.passesCompletedAway} />
+              )}
+              {s.tacklesHome + s.tacklesAway > 0 && (
+                <MatchStatRow label="Entradas" homeVal={s.tacklesHome} awayVal={s.tacklesAway} />
+              )}
+              {s.recoveriesHome + s.recoveriesAway > 0 && (
+                <MatchStatRow label="Recuperaciones" homeVal={s.recoveriesHome} awayVal={s.recoveriesAway} />
+              )}
+              {s.cornersHome + s.cornersAway > 0 && (
+                <MatchStatRow label="Córners" homeVal={s.cornersHome} awayVal={s.cornersAway} />
+              )}
+              {s.foulsHome + s.foulsAway > 0 && (
+                <MatchStatRow label="Faltas" homeVal={s.foulsHome} awayVal={s.foulsAway} invertBar />
+              )}
+              {s.yellowCardsHome + s.yellowCardsAway > 0 && (
+                <MatchStatRow
+                  label="Tarjetas amarillas"
+                  homeVal={s.yellowCardsHome} awayVal={s.yellowCardsAway}
+                  barColor="#facc15" invertBar
+                />
+              )}
+              {s.redCardsHome + s.redCardsAway > 0 && (
+                <MatchStatRow
+                  label="Tarjetas rojas"
+                  homeVal={s.redCardsHome} awayVal={s.redCardsAway}
+                  barColor="#ef4444" invertBar
+                />
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            background: "rgba(255,255,255,.02)", border: "1px solid var(--fifa-line)",
+            borderRadius: "16px", padding: "44px 20px", textAlign: "center",
+          }}>
+            <p style={{ fontSize: "13px", color: "var(--fifa-mute)" }}>
+              Este partido no tiene estadísticas detalladas registradas.
+            </p>
+          </div>
+        )}
+
+        {/* Source badge */}
+        {match.source === "ai" && (
+          <div style={{
+            marginTop: "16px", display: "flex", justifyContent: "center",
+          }}>
+            <span style={{
+              fontSize: "10px", fontWeight: 600, letterSpacing: ".5px",
+              color: "rgba(54,230,255,.6)", border: "1px solid rgba(54,230,255,.18)",
+              backgroundColor: "rgba(54,230,255,.06)", borderRadius: "7px", padding: "4px 10px",
+            }}>
+              ✦ Importado por IA / OCR
+            </span>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function MatchStatRow({ label, homeVal, awayVal, unit = "", isBar, barColor = "var(--fifa-neon)", invertBar }) {
+  const total = (homeVal || 0) + (awayVal || 0);
+  const homeRatio = total > 0 ? (homeVal || 0) / total : 0.5;
+  const awayRatio = 1 - homeRatio;
+
+  const homeStronger = invertBar ? homeVal <= awayVal : homeVal >= awayVal;
+  const awayStronger = invertBar ? awayVal <= homeVal : awayVal >= homeVal;
+
+  return (
+    <div style={{
+      display: "grid", gridTemplateColumns: "1fr 180px 1fr",
+      alignItems: "center", gap: "12px",
+      padding: "13px 24px",
+      borderBottom: "1px solid rgba(255,255,255,.03)",
+    }}>
+      {/* Home value */}
+      <div style={{ textAlign: "right" }}>
+        <span style={{
+          fontFamily: "var(--font-title)", fontSize: "1.4rem", fontWeight: 900,
+          color: homeStronger ? "#fff" : "rgba(255,255,255,.45)",
+          fontVariantNumeric: "tabular-nums",
+        }}>
+          {homeVal || 0}{unit}
+        </span>
+      </div>
+
+      {/* Center: label + bar */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
+        <span style={{
+          fontSize: "10px", fontWeight: 600, textTransform: "uppercase",
+          letterSpacing: ".9px", color: "rgba(255,255,255,.35)",
+          whiteSpace: "nowrap",
+        }}>{label}</span>
+        <div style={{
+          width: "100%", height: isBar ? "7px" : "4px",
+          borderRadius: "4px", overflow: "hidden",
+          backgroundColor: "rgba(255,255,255,.05)",
+          display: "flex",
+        }}>
+          <div style={{
+            width: `${homeRatio * 100}%`,
+            backgroundColor: barColor,
+            opacity: 0.85,
+            borderRadius: "4px 0 0 4px",
+            transition: "width .4s ease",
+          }} />
+          <div style={{
+            flex: 1,
+            backgroundColor: "rgba(54,230,255,.55)",
+            opacity: 0.75,
+            borderRadius: "0 4px 4px 0",
+          }} />
+        </div>
+      </div>
+
+      {/* Away value */}
+      <div style={{ textAlign: "left" }}>
+        <span style={{
+          fontFamily: "var(--font-title)", fontSize: "1.4rem", fontWeight: 900,
+          color: awayStronger ? "#fff" : "rgba(255,255,255,.45)",
+          fontVariantNumeric: "tabular-nums",
+        }}>
+          {awayVal || 0}{unit}
+        </span>
+      </div>
     </div>
   );
 }

@@ -1,13 +1,15 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../auth/AuthContext";
 import logo from "../assets/logo-league-manager.png";
 
 const linkBase =
   "flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition";
+
 const linkIdle =
   "text-[var(--fifa-mute)] hover:text-[var(--fifa-text)] hover:bg-white/5";
-const linkActive =
-  "text-[var(--fifa-text)] bg-white/5 ring-1 ring-[var(--fifa-neon)]/20 shadow-glow";
+
+const linkActive = "text-[var(--fifa-text)] bg-white/5";
 
 const NAV_ITEMS = [
   {
@@ -42,6 +44,7 @@ const NAV_ITEMS = [
 export default function MainLayout() {
   const { admin, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   function handleLogout() {
     logout();
@@ -49,33 +52,55 @@ export default function MainLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-fifa-radial">
-      {/* ── Sticky header ── */}
+    <div
+      className="min-h-screen bg-fifa-radial"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(2,6,12,.45), rgba(2,6,12,.72)), url('/images/admin-manager-bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       <header
         className="sticky top-0 z-20 border-b backdrop-blur-md"
         style={{
           borderColor: "rgba(36,255,122,0.15)",
           backgroundColor: "rgba(4,8,14,0.72)",
-          boxShadow: "0 1px 0 0 rgba(36,255,122,0.08), 0 4px 24px rgba(0,0,0,0.5)",
+          boxShadow:
+            "0 1px 0 0 rgba(36,255,122,0.08), 0 4px 24px rgba(0,0,0,0.5)",
         }}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3">
-          {/* Logo + branding */}
-          <div className="flex items-center gap-4 min-w-0">
+        <div className="flex w-full items-center px-6 py-3 sm:px-8">
+          <div className="flex flex-1 items-center min-w-0">
             <img
               src={logo}
               alt="FC Stats Pro League Manager"
-              className="h-28 w-auto object-contain sm:h-36"
-              style={{ filter: "drop-shadow(0 0 22px rgba(36,255,122,0.28))" }}
+              className="h-14 w-auto object-contain sm:h-16 lg:h-18"
+              style={{
+                filter: "drop-shadow(0 0 14px rgba(36,255,122,0.22))",
+              }}
               onError={(e) => {
                 e.currentTarget.style.display = "none";
               }}
             />
 
+            {admin?.branding?.leagueName && (
+              <span
+                className="ml-3 hidden lg:block text-sm font-semibold truncate max-w-[200px]"
+                style={{
+                  color: "var(--fifa-neon)",
+                  fontFamily: "var(--font-ui)",
+                  letterSpacing: "0.03em",
+                }}
+              >
+                {admin.branding.leagueName}
+              </span>
+            )}
           </div>
 
-          {/* Admin info + logout */}
-          <div className="flex shrink-0 items-center gap-3">
+          <div className="ml-auto flex shrink-0 items-center gap-3">
             <div
               className="hidden sm:flex flex-col items-end"
               style={{ color: "var(--fifa-mute)" }}
@@ -90,9 +115,37 @@ export default function MainLayout() {
               >
                 {admin?.name ?? "Admin"}
               </span>
+
               <span style={{ fontSize: "0.7rem" }}>{admin?.email}</span>
             </div>
+
             <button
+              type="button"
+              onClick={() => navigate("/settings")}
+              title="Ajustes"
+              aria-label="Ajustes"
+              className="flex h-10 w-10 items-center justify-center rounded-xl font-semibold ring-1 transition"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.05)",
+                color: "var(--fifa-text)",
+                boxShadow: "0 0 0 1px var(--fifa-line)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 0 0 1px rgba(36,255,122,.35), 0 0 14px rgba(36,255,122,.12)";
+                e.currentTarget.style.color = "var(--fifa-neon)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "0 0 0 1px var(--fifa-line)";
+                e.currentTarget.style.color = "var(--fifa-text)";
+              }}
+            >
+              <GearIcon />
+            </button>
+
+            <button
+              type="button"
               onClick={handleLogout}
               className="rounded-xl px-4 py-2 font-semibold ring-1 transition"
               style={{
@@ -104,10 +157,12 @@ export default function MainLayout() {
                 boxShadow: "0 0 0 1px var(--fifa-line)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = "0 0 0 1px rgba(36,255,122,.35), 0 0 14px rgba(36,255,122,.12)";
+                e.currentTarget.style.boxShadow =
+                  "0 0 0 1px rgba(36,255,122,.35), 0 0 14px rgba(36,255,122,.12)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = "0 0 0 1px var(--fifa-line)";
+                e.currentTarget.style.boxShadow =
+                  "0 0 0 1px var(--fifa-line)";
               }}
             >
               Salir
@@ -116,34 +171,55 @@ export default function MainLayout() {
         </div>
       </header>
 
-      {/* ── Content grid ── */}
-      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-5 px-5 py-6">
-        {/* Sidebar */}
-        <aside className="col-span-12 md:col-span-3 xl:col-span-2">
+      <div
+        className="md:hidden sticky top-[60px] z-10 px-4 pt-3 pb-2"
+        style={{
+          background: "rgba(2,6,12,0.85)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(36,255,122,0.08)",
+        }}
+      >
+        <div
+          className="flex gap-2 overflow-x-auto"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {NAV_ITEMS.map((item) => (
+            <NavLink key={item.to} to={item.to} className="shrink-0">
+              {({ isActive }) => (
+                <div
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all"
+                  style={{
+                    background: isActive
+                      ? "rgba(36,255,122,0.1)"
+                      : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${
+                      isActive
+                        ? "rgba(36,255,122,0.28)"
+                        : "rgba(255,255,255,0.07)"
+                    }`,
+                    color: isActive ? "var(--fifa-neon)" : "var(--fifa-mute)",
+                    fontFamily: "var(--font-ui)",
+                  }}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </div>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      </div>
+
+      <div className="mx-auto grid max-w-7xl grid-cols-12 gap-5 px-4 py-5 sm:px-5 sm:py-6">
+        <aside className="hidden md:block md:col-span-3 xl:col-span-2">
           <div
             className="overflow-hidden rounded-2xl shadow-glow"
             style={{
-              background: "linear-gradient(180deg, rgba(13,34,43,.92), rgba(6,16,22,.92))",
+              background:
+                "linear-gradient(180deg, rgba(13,34,43,.92), rgba(6,16,22,.92))",
               border: "1px solid var(--fifa-line)",
             }}
           >
-            <div
-              className="border-b px-4 py-4"
-              style={{ borderColor: "rgba(255,255,255,0.10)" }}
-            >
-              <div
-                className="text-xs font-bold tracking-widest"
-                style={{
-                  fontFamily: "var(--font-title)",
-                  color: "var(--fifa-mute)",
-                  letterSpacing: "0.18em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Navegación
-              </div>
-            </div>
-
             <div className="px-3 py-3">
               <nav className="space-y-1">
                 {NAV_ITEMS.map((item) => (
@@ -152,6 +228,11 @@ export default function MainLayout() {
                     to={item.to}
                     className={({ isActive }) =>
                       `${linkBase} ${isActive ? linkActive : linkIdle}`
+                    }
+                    style={({ isActive }) =>
+                      isActive
+                        ? { borderLeft: "3px solid #24ff7a" }
+                        : { borderLeft: "3px solid transparent" }
                     }
                   >
                     {item.icon}
@@ -163,11 +244,43 @@ export default function MainLayout() {
           </div>
         </aside>
 
-        {/* Main content */}
         <main className="col-span-12 min-w-0 md:col-span-9 xl:col-span-10">
-          <Outlet />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.26, ease: [0.25, 0.46, 0.45, 0.94] }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.7}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.607 2.296.07 2.572-1.065Z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+      />
+    </svg>
   );
 }

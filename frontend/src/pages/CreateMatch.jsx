@@ -81,6 +81,8 @@ export default function CreateMatch() {
   }
 
   const sameClub = form.homeClub && form.homeClub === form.awayClub;
+  const homeClubName = clubs.find((c) => c._id === form.homeClub)?.name ?? "Local";
+  const awayClubName = clubs.find((c) => c._id === form.awayClub)?.name ?? "Visitante";
 
   return (
     <div className="max-w-lg">
@@ -92,12 +94,65 @@ export default function CreateMatch() {
         {tournament?.name ?? "Torneo"}
       </button>
 
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Crear partido</h1>
-          <p className="page-subtitle">Registra un partido manualmente</p>
-        </div>
-      </div>
+      <div
+  className="relative overflow-hidden rounded-3xl p-7 md:p-8"
+  style={{
+    background:
+      "linear-gradient(135deg, rgba(10,24,34,.95), rgba(6,16,22,.92))",
+    border: "1px solid rgba(36,255,122,.12)",
+    boxShadow:
+      "0 0 0 1px rgba(255,255,255,.02), 0 20px 60px rgba(0,0,0,.45)",
+  }}
+>
+  {/* Glow */}
+  <div
+    className="pointer-events-none absolute inset-0"
+    style={{
+      background:
+        "radial-gradient(circle at top left, rgba(36,255,122,.12), transparent 30%), radial-gradient(circle at right, rgba(54,230,255,.10), transparent 25%)",
+    }}
+  />
+
+  <div className="relative z-10">
+    <p
+      className="mb-2"
+      style={{
+        fontSize: "0.72rem",
+        letterSpacing: "0.24em",
+        textTransform: "uppercase",
+        color: "var(--fifa-neon)",
+        fontFamily: "var(--font-title)",
+      }}
+    >
+      Match Center
+    </p>
+
+    <h1
+      style={{
+        fontSize: "2.2rem",
+        lineHeight: 1,
+        fontWeight: 800,
+        color: "white",
+        fontFamily: "var(--font-title)",
+        letterSpacing: "0.03em",
+        textTransform: "uppercase",
+      }}
+    >
+      Crear Partido
+    </h1>
+
+    <p
+      className="mt-2 max-w-xl"
+      style={{
+        color: "var(--fifa-mute)",
+        fontFamily: "var(--font-ui)",
+      }}
+    >
+      Registra partidos oficiales, resultados competitivos y estadísticas
+      avanzadas para alimentar standings y playoffs.
+    </p>
+  </div>
+</div>
 
       <div className="card p-6">
         {error && <p className="error-msg mb-5">{error}</p>}
@@ -138,31 +193,97 @@ export default function CreateMatch() {
           </div>
           {sameClub && <p className="error-msg">El club local y visitante no pueden ser iguales.</p>}
 
-          {/* Score */}
-          <div>
-            <p className="label mb-3">Marcador</p>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <label className="label">Local</label>
+          {/* Score Hero Block */}
+          <div
+            className="relative overflow-hidden rounded-2xl p-5"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(6,16,22,.96), rgba(13,34,43,.92))",
+              border: "1px solid rgba(36,255,122,.14)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,.03)",
+            }}
+          >
+            <p
+              className="text-center mb-4"
+              style={{
+                fontSize: "0.65rem",
+                letterSpacing: "0.22em",
+                textTransform: "uppercase",
+                color: "var(--fifa-mute)",
+                fontFamily: "var(--font-title)",
+              }}
+            >
+              Marcador
+            </p>
+
+            <div className="flex items-end justify-center gap-3">
+              <div className="flex-1 flex flex-col items-center gap-2">
+                <p
+                  className="text-xs truncate max-w-[110px] text-center font-medium"
+                  style={{ color: "var(--fifa-mute)", fontFamily: "var(--font-ui)" }}
+                >
+                  {homeClubName}
+                </p>
                 <input
                   name="scoreHome"
                   type="number"
                   min={0}
                   value={form.scoreHome}
                   onChange={handleChange}
-                  className="input-field text-center text-lg font-bold"
+                  className="w-24 text-center focus:outline-none"
+                  style={{
+                    fontSize: "3rem",
+                    fontWeight: 800,
+                    fontFamily: "var(--font-title)",
+                    color: "white",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: "2px solid rgba(36,255,122,0.30)",
+                    paddingBottom: "4px",
+                    lineHeight: 1,
+                  }}
                 />
               </div>
-              <span className="text-gray-600 font-bold text-xl mt-4">–</span>
-              <div className="flex-1">
-                <label className="label">Visitante</label>
+
+              <div className="pb-2 px-1">
+                <span
+                  style={{
+                    fontSize: "2rem",
+                    fontWeight: 700,
+                    color: "rgba(255,255,255,0.18)",
+                    fontFamily: "var(--font-title)",
+                    lineHeight: 1,
+                  }}
+                >
+                  —
+                </span>
+              </div>
+
+              <div className="flex-1 flex flex-col items-center gap-2">
+                <p
+                  className="text-xs truncate max-w-[110px] text-center font-medium"
+                  style={{ color: "var(--fifa-mute)", fontFamily: "var(--font-ui)" }}
+                >
+                  {awayClubName}
+                </p>
                 <input
                   name="scoreAway"
                   type="number"
                   min={0}
                   value={form.scoreAway}
                   onChange={handleChange}
-                  className="input-field text-center text-lg font-bold"
+                  className="w-24 text-center focus:outline-none"
+                  style={{
+                    fontSize: "3rem",
+                    fontWeight: 800,
+                    fontFamily: "var(--font-title)",
+                    color: "white",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: "2px solid rgba(36,255,122,0.30)",
+                    paddingBottom: "4px",
+                    lineHeight: 1,
+                  }}
                 />
               </div>
             </div>

@@ -1,13 +1,13 @@
 import { useState } from "react";
 
-export default function ClubAvatar({ name, logo, small, dim }) {
+export default function ClubAvatar({ name, logo, small, medium, large, xlarge, dim }) {
   const [imgError, setImgError] = useState(false);
 
   const initials = name
     ? name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "CL";
 
-  const sizeClass = small ? "w-7 h-7 text-xs" : "w-10 h-10 text-sm";
+  const sizeClass = small ? "w-7 h-7 text-xs" : medium ? "w-11 h-11 text-sm" : xlarge ? "w-20 h-20 text-2xl" : large ? "w-12 h-12 text-base" : "w-10 h-10 text-sm";
   const opacity = dim ? 0.5 : 1;
 
   if (logo && !imgError) {

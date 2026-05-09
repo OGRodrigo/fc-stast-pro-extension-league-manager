@@ -2,7 +2,7 @@ import axios from "axios";
 import client from "./client";
 
 const publicClient = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:3000",
   headers: { "Content-Type": "application/json" },
 });
 
@@ -47,4 +47,15 @@ export const aiApi = {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
+};
+
+export const profileApi = {
+  updateProfile: (data) => client.patch("/auth/profile", data),
+  updatePassword: (data) => client.patch("/auth/password", data),
+  updateBranding: (data) => client.patch("/auth/branding", data),
+};
+
+export const authApi = {
+  forgotPassword: (email) => publicClient.post("/auth/forgot-password", { email }),
+  resetPassword: (token, password) => publicClient.post(`/auth/reset-password/${token}`, { password }),
 };

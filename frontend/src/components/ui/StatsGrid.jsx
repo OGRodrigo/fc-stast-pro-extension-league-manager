@@ -1,6 +1,3 @@
-// frontend/src/components/ui/StatsGrid.jsx
-// Categorized stats grid for match import preview.
-
 function confColor(v) {
   if (v >= 0.8) return "var(--fifa-neon)";
   if (v >= 0.6) return "#facc15";
@@ -27,7 +24,7 @@ const CATEGORIES = [
     id: "attack",
     label: "Ataque",
     rows: [
-      { label: "Posesión (%)",   home: "possessionHome",    away: "possessionAway",    fcKey: "possession",      step: "any" },
+      { label: "Posesión (%)",   home: "possessionHome",    away: "possessionAway",    fcKey: "possession",      step: "any", isPossession: true },
       { label: "Tiros totales",  home: "shotsHome",         away: "shotsAway",         fcKey: "shots",           step: "1" },
       { label: "Tiros al arco",  home: "shotsOnTargetHome", away: "shotsOnTargetAway", fcKey: "shotsOnTarget",   step: "1" },
     ],
@@ -60,8 +57,35 @@ const CATEGORIES = [
   },
 ];
 
+function PossessionBar({ homeVal, awayVal }) {
+  const h = parseFloat(homeVal);
+  const a = parseFloat(awayVal);
+  if (isNaN(h) || isNaN(a) || (h === 0 && a === 0)) return null;
+  const total = h + a || 100;
+  const homePct = Math.round((h / total) * 100);
+  const awayPct = 100 - homePct;
+  return (
+    <div className="mt-1.5 px-1">
+      <div className="flex rounded-full overflow-hidden h-1" style={{ background: "rgba(255,255,255,0.06)" }}>
+        <div
+          style={{
+            width: `${homePct}%`,
+            background: "var(--fifa-neon)",
+            boxShadow: "2px 0 6px rgba(36,255,122,0.4)",
+            transition: "width 0.6s ease",
+          }}
+        />
+        <div style={{ flex: 1, background: "rgba(54,230,255,0.5)" }} />
+      </div>
+      <div className="flex justify-between mt-0.5 px-0.5">
+        <span className="text-[9px] font-bold" style={{ color: "var(--fifa-neon)" }}>{homePct}%</span>
+        <span className="text-[9px] font-bold" style={{ color: "rgba(54,230,255,0.8)" }}>{awayPct}%</span>
+      </div>
+    </div>
+  );
+}
+
 export default function StatsGrid({ field, fieldConfidence = {} }) {
-  // Only return confidence entry if the stat was actually extracted by AI
   function getFC(fcKey) {
     if (!fcKey) return null;
     const fc = fieldConfidence[fcKey];
@@ -104,47 +128,53 @@ export default function StatsGrid({ field, fieldConfidence = {} }) {
                 const hasData = homeVal !== "" || awayVal !== "";
 
                 return (
-                  <div
-                    key={row.home}
-                    className="grid items-center rounded px-1 py-0.5 transition-colors"
-                    style={{
-                      gridTemplateColumns: "1fr 88px 88px",
-                      gap: "0 8px",
-                      backgroundColor: hasData ? "rgba(36,255,122,0.04)" : undefined,
-                    }}
-                  >
-                    {/* Label + badge — badge only when AI detected this stat */}
-                    <div className="flex items-center min-w-0 gap-0.5">
-                      <span className="text-xs text-gray-400 truncate">{row.label}</span>
-                      {fc && hasData && (
-                        <ConfBadge
-                          confidence={fc.confidence}
-                          requiresValidation={fc.requiresValidation}
-                        />
-                      )}
+                  <div key={row.home}>
+                    <div
+                      className="grid items-center rounded px-1 py-0.5 transition-colors"
+                      style={{
+                        gridTemplateColumns: "1fr 88px 88px",
+                        gap: "0 8px",
+                        backgroundColor: hasData ? "rgba(36,255,122,0.04)" : undefined,
+                      }}
+                    >
+                      {/* Label + badge */}
+                      <div className="flex items-center min-w-0 gap-0.5">
+                        <span className="text-xs text-gray-400 truncate">{row.label}</span>
+                        {fc && hasData && (
+                          <ConfBadge
+                            confidence={fc.confidence}
+                            requiresValidation={fc.requiresValidation}
+                          />
+                        )}
+                      </div>
+
+                      {/* Home input */}
+                      <input
+                        type="number"
+                        min="0"
+                        step={row.step || "1"}
+                        className="input text-center text-xs py-1.5"
+                        style={{ height: "32px" }}
+                        placeholder="—"
+                        {...field(row.home)}
+                      />
+
+                      {/* Away input */}
+                      <input
+                        type="number"
+                        min="0"
+                        step={row.step || "1"}
+                        className="input text-center text-xs py-1.5"
+                        style={{ height: "32px" }}
+                        placeholder="—"
+                        {...field(row.away)}
+                      />
                     </div>
 
-                    {/* Home input */}
-                    <input
-                      type="number"
-                      min="0"
-                      step={row.step || "1"}
-                      className="input text-center text-xs py-1.5"
-                      style={{ height: "32px" }}
-                      placeholder="—"
-                      {...field(row.home)}
-                    />
-
-                    {/* Away input */}
-                    <input
-                      type="number"
-                      min="0"
-                      step={row.step || "1"}
-                      className="input text-center text-xs py-1.5"
-                      style={{ height: "32px" }}
-                      placeholder="—"
-                      {...field(row.away)}
-                    />
+                    {/* Possession visual bar — only when both values present */}
+                    {row.isPossession && hasData && (
+                      <PossessionBar homeVal={homeVal} awayVal={awayVal} />
+                    )}
                   </div>
                 );
               })}
