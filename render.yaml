@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: fc-stats-backend
+    env: node
+    region: oregon
+    plan: standard
+    numInstances: 1
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PORT
+        value: "10000"
+      - key: FRONTEND_URL
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD_HASH
+        sync: false
+    buildCommand: npm install
+    rootDir: .
+    branches:
+      - branch: main
+        isProduction: true

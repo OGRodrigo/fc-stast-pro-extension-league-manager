@@ -1,3 +1,6 @@
 .env
 node_modules
 .claude
+frontend/dist
+frontend/node_modules
+dist
