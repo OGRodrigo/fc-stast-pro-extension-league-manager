@@ -40,25 +40,61 @@ function ClubLogoPicker({ value, onChange, onError }) {
     >
       <p className="label mb-3">Logo del club</p>
 
-      <div
-  className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border"
-  style={{
-    borderColor: "rgba(36,255,122,.18)",
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01))",
-    boxShadow: "0 0 22px rgba(36,255,122,.08)",
-  }}
->
-  {club.logo ? (
-    <img
-      src={club.logo}
-      alt={club.name}
-      className="h-full w-full object-contain p-2"
-    />
-  ) : (
-    <ClubAvatar name={club.name} logo={club.logo} />
-  )}
-</div>
+      <div className="flex items-center gap-4">
+        <div
+          className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl border"
+          style={{
+            borderColor: "rgba(36,255,122,.18)",
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01))",
+            boxShadow: "0 0 22px rgba(36,255,122,.08)",
+          }}
+        >
+          {value ? (
+            <img
+              src={value}
+              alt="logo"
+              className="h-full w-full object-contain p-2"
+            />
+          ) : (
+            <ClubAvatar name="" logo={null} />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label
+            className="cursor-pointer rounded-xl px-4 py-2 text-sm font-semibold transition-all"
+            style={{
+              background: "rgba(36,255,122,.10)",
+              border: "1px solid rgba(36,255,122,.25)",
+              color: "var(--fifa-neon)",
+            }}
+          >
+            Subir imagen
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) readImageFile(file, onChange, onError);
+                e.target.value = "";
+              }}
+            />
+          </label>
+
+          {value && (
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="text-xs"
+              style={{ color: "var(--fifa-mute)" }}
+            >
+              Quitar logo
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

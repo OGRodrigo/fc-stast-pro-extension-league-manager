@@ -3,6 +3,9 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const Admin = require("../models/Admin");
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+
 function signToken(adminId) {
   return jwt.sign(
     { id: adminId },
@@ -35,17 +38,23 @@ exports.register = async (req, res) => {
       });
     }
 
-    const existingAdmin = await Admin.findOne({ email });
+    if (!EMAIL_RE.test(email)) {
+      return res.status(400).json({ message: "El email no es válido." });
+    }
 
-    if (existingAdmin) {
-      return res.status(409).json({
-        message: "Ya existe un administrador con este email.",
-      });
+    if (password.length < 8) {
+      return res.status(400).json({ message: "La contraseña debe tener al menos 8 caracteres." });
+    }
+
+    // Only one admin allowed — block registration if one already exists
+    const existing = await Admin.countDocuments();
+    if (existing > 0) {
+      return res.status(403).json({ message: "El registro está deshabilitado." });
     }
 
     const admin = await Admin.create({
       name,
-      email,
+      email: email.toLowerCase().trim(),
       password,
     });
 
@@ -77,7 +86,11 @@ exports.login = async (req, res) => {
       });
     }
 
-    const admin = await Admin.findOne({ email }).select("+password");
+    if (!EMAIL_RE.test(email)) {
+      return res.status(401).json({ message: "Credenciales inválidas." });
+    }
+
+    const admin = await Admin.findOne({ email: email.toLowerCase().trim() }).select("+password");
 
     if (!admin) {
       return res.status(401).json({
@@ -168,8 +181,8 @@ exports.updatePassword = async (req, res) => {
       return res.status(400).json({ message: "La contraseña actual y la nueva son obligatorias." });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "La nueva contraseña debe tener al menos 6 caracteres." });
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "La nueva contraseña debe tener al menos 8 caracteres." });
     }
 
     const admin = await Admin.findById(req.admin._id).select("+password");
@@ -296,8 +309,8 @@ exports.resetPassword = async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;
 
-    if (!password || password.length < 6) {
-      return res.status(400).json({ message: "La contraseña debe tener al menos 6 caracteres." });
+    if (!password || password.length < 8) {
+      return res.status(400).json({ message: "La contraseña debe tener al menos 8 caracteres." });
     }
 
     const hash = crypto.createHash("sha256").update(token).digest("hex");
@@ -332,8 +345,17 @@ exports.updateBranding = async (req, res) => {
     const { leagueName, primaryColor } = req.body;
     const $set = {};
 
-    if (leagueName !== undefined) $set["branding.leagueName"] = leagueName.trim();
-    if (primaryColor !== undefined) $set["branding.primaryColor"] = primaryColor;
+    if (leagueName !== undefined) {
+      const trimmed = String(leagueName).trim().slice(0, 100);
+      $set["branding.leagueName"] = trimmed;
+    }
+
+    if (primaryColor !== undefined) {
+      if (!HEX_COLOR_RE.test(primaryColor)) {
+        return res.status(400).json({ message: "El color debe ser un hex válido (#rrggbb)." });
+      }
+      $set["branding.primaryColor"] = primaryColor;
+    }
 
     if (Object.keys($set).length === 0) {
       return res.status(400).json({ message: "Debes proporcionar al menos un campo de branding." });

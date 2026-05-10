@@ -18,6 +18,9 @@ const {
 
 const app = express();
 
+// Rate limiting works by IP — required behind Render/Vercel/Nginx proxies
+app.set("trust proxy", 1);
+
 // ── Seguridad HTTP headers ──────────────────────────────────────────────────
 app.use(
   helmet({
@@ -51,8 +54,8 @@ app.use(
 app.use(generalLimiter);
 
 // ── Body parsing ────────────────────────────────────────────────────────────
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 if (process.env.NODE_ENV !== "test") {
   app.use(morgan("dev"));
@@ -77,7 +80,7 @@ app.get("/public/tournaments/:slug", async (req, res, next) => {
   try {
     const t = await Tournament.findOne({ publicSlug: req.params.slug, visibility: "public" });
     if (!t) return next();
-    const origin = `${req.protocol}://${req.get("host")}`;
+    const origin = process.env.FRONTEND_URL?.replace(/\/$/, "") || "https://fcstatspro.com";
     const url  = `${origin}/public/tournaments/${t.publicSlug}`;
     const desc = `${FORMAT_LABELS[t.format] ?? t.format} · Temporada ${t.season} · Sigue tabla, bracket y resultados en tiempo real`;
     const safeTitle = t.name.replace(/"/g, "&quot;");
