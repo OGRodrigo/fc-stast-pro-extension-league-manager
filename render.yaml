@@ -9,20 +9,42 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: MONGODB_URI
+      - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: OPENAI_API_KEY
+      - key: CLIENT_URL
         sync: false
-      - key: PORT
-        value: "10000"
       - key: FRONTEND_URL
         sync: false
-      - key: ADMIN_EMAIL
+      - key: OPENAI_API_KEY
         sync: false
-      - key: ADMIN_PASSWORD_HASH
+      - key: AZURE_VISION_ENDPOINT
         sync: false
+      - key: AZURE_VISION_KEY
+        sync: false
+      - key: AZURE_VISION_API_VERSION
+        value: "2023-10-01"
+      - key: SMTP_HOST
+        value: "smtp.gmail.com"
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_SECURE
+        value: "true"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        value: "FC Stats Pro <statsgestion1v@gmail.com>"
+      - key: AI_SCORE_CONFIDENCE_MIN
+        value: "0.85"
+      - key: AI_STATS_CONFIDENCE_MIN
+        value: "0.70"
+      - key: AI_IMPORT_MAX_IMAGES
+        value: "10"
+      - key: PORT
+        value: "10000"
     buildCommand: npm install
     rootDir: .
     branches:
