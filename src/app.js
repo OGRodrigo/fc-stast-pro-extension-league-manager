@@ -26,17 +26,21 @@ app.use(
 );
 
 // ── CORS ────────────────────────────────────────────────────────────────────
-const allowedOrigins = (process.env.CLIENT_URL || "")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  "https://fcstatspro.com",
+  "https://www.fcstatspro.com",
+  "http://localhost:5173",
+];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin(origin, callback) {
       if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+
+      console.log("❌ CORS bloqueado:", origin);
+
       return callback(new Error("Origen no permitido por CORS"));
     },
     credentials: true,
