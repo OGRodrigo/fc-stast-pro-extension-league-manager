@@ -118,15 +118,15 @@ export default function PublicTournamentPage() {
 
         <div
           className="max-w-6xl mx-auto w-full px-4 sm:px-6"
-          style={{ position: "relative", zIndex: 1, paddingTop: "4rem", paddingBottom: "4.5rem" }}
+          className="pt-10 pb-12 sm:pt-16 sm:pb-[4.5rem]"
+          style={{ position: "relative", zIndex: 1 }}
         >
-          <div className="flex flex-wrap items-center justify-between gap-8">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-6 sm:gap-8">
 
             {/* Left: logo + info */}
-            <div className="flex items-start gap-5 min-w-0 flex-1">
+            <div className="flex items-start gap-4 sm:gap-5 min-w-0 flex-1">
               {/* Tournament badge */}
-              <div style={{
-                flexShrink: 0, width: "112px", height: "112px",
+              <div className="w-20 h-20 sm:w-28 sm:h-28 flex-shrink-0" style={{
                 borderRadius: "22px",
                 border: "2px solid rgba(36,255,122,.28)",
                 backgroundColor: "rgba(36,255,122,.07)",
@@ -208,12 +208,13 @@ export default function PublicTournamentPage() {
             </div>
 
             {/* Right: jornada card + share */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "14px" }}>
+            <div className="flex flex-col items-stretch sm:items-end gap-3 sm:gap-3.5 w-full sm:w-auto">
               <JornadaCard summary={summary} allMatches={allMatches} />
               <button
                 onClick={() => setShareOpen(true)}
+                className="w-full sm:w-auto justify-center"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: "7px",
+                  display: "flex", alignItems: "center", gap: "7px",
                   fontSize: "12px", fontWeight: 600, padding: "9px 16px",
                   borderRadius: "10px", border: "1px solid",
                   borderColor: "rgba(36,255,122,.3)",
@@ -1335,7 +1336,7 @@ function JornadaCard({ summary, allMatches }) {
     : null;
 
   return (
-    <div style={{
+    <div className="w-full sm:w-auto" style={{
       flexShrink: 0, minWidth: "200px",
       borderRadius: "16px",
       border: "1px solid rgba(36,255,122,.20)",
