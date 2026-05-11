@@ -4,28 +4,11 @@ import { clubsApi } from "../api";
 import { Modal, ModalActions, ConfirmModal } from "../components/ui/Modal";
 import ClubAvatar from "../components/ui/ClubAvatar";
 import { heroItem, staggerGrid, cardItem } from "../utils/motionVariants";
-
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+import { compressImageFile } from "../utils/compressImage";
 
 function readImageFile(file, onLoad, onError) {
   if (!file) return;
-
-  if (file.size > MAX_IMAGE_SIZE) {
-    onError("La imagen no puede superar 2 MB.");
-    return;
-  }
-
-  const reader = new FileReader();
-
-  reader.onload = () => {
-    onLoad(reader.result);
-  };
-
-  reader.onerror = () => {
-    onError("No se pudo leer la imagen.");
-  };
-
-  reader.readAsDataURL(file);
+  compressImageFile(file).then(onLoad).catch((err) => onError(err.message));
 }
 
 function ClubLogoPicker({ value, onChange, onError }) {

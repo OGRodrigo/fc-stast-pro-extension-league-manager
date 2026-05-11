@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import QRCode from "react-qr-code";
+import { QRCodeSVG as QRCode } from "react-qr-code";
 import toast from "react-hot-toast";
 import logo from "../../assets/logo-league-manager.png";
 

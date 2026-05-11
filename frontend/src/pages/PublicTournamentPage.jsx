@@ -524,7 +524,7 @@ function PublicFooter() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-6">
 
         {/* Main row */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <div className="flex flex-col sm:flex-col items-start sm:items-center justify-between gap-6">
 
           {/* Branding */}
           <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", flexShrink: 0 }}>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { tournamentsApi, matchesApi, clubsApi } from "../api";
 import ClubAvatar from "../components/ui/ClubAvatar";
+import { compressImageFile } from "../utils/compressImage";
 import { Modal, ModalActions, ConfirmModal } from "../components/ui/Modal";
 import ProBracket from "../components/ProBracket";
 import TournamentShareModal from "../components/share/TournamentShareModal";
@@ -2529,22 +2530,9 @@ function EditTournamentModal({ tournament, error, onSave, onClose }) {
 function handleLogoChange(e) {
   const file = e.target.files?.[0];
   if (!file) return;
-
-  if (file.size > 2 * 1024 * 1024) {
-    alert("La imagen no puede superar 2 MB.");
-    return;
-  }
-
-  const reader = new FileReader();
-
-  reader.onload = () => {
-    setForm((prev) => ({
-      ...prev,
-      logo: reader.result,
-    }));
-  };
-
-  reader.readAsDataURL(file);
+  compressImageFile(file)
+    .then((dataUrl) => setForm((prev) => ({ ...prev, logo: dataUrl })))
+    .catch((err) => alert(err.message));
 }
 
 function removeLogo() {

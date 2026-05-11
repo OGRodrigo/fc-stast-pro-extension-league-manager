@@ -1,7 +1,6 @@
 import { Fragment } from "react";
-import { QRCodeSVG } from "react-qr-code";
+import { QRCodeSVG, QRCodeSVG as QRCode } from "react-qr-code";
 import ClubAvatar from "./ui/ClubAvatar";
-import QRCode from "react-qr-code";
 
 
 // ─── Layout constants ──────────────────────────────────────────────────────────
