@@ -549,7 +549,7 @@ export default function LandingPage() {
               { value: "3", label: "Formatos de torneo" },
               { value: "IA", label: "OCR integrado" },
               { value: "∞", label: "Equipos y torneos" },
-              { value: "0€", label: "Sin costo de entrada" },
+              { value: "Gratis", label: "Sin costo de entrada" },
             ].map((stat, i) => (
               <div key={i} className="flex flex-col items-center gap-1">
                 <span
