@@ -72,7 +72,7 @@ export default function MainLayout() {
             "0 1px 0 0 rgba(36,255,122,0.08), 0 4px 24px rgba(0,0,0,0.5)",
         }}
       >
-        <div className="flex w-full items-center px-6 py-3 sm:px-8">
+        <div className="flex w-full items-center px-4 py-2 sm:px-8 sm:py-3">
           <div className="flex flex-1 items-center min-w-0">
             <img
               src={logo}
@@ -124,7 +124,7 @@ export default function MainLayout() {
               onClick={() => navigate("/settings")}
               title="Ajustes"
               aria-label="Ajustes"
-              className="flex h-10 w-10 items-center justify-center rounded-xl font-semibold ring-1 transition"
+              className="flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-xl font-semibold ring-1 transition"
               style={{
                 backgroundColor: "rgba(255,255,255,0.05)",
                 color: "var(--fifa-text)",
@@ -147,7 +147,7 @@ export default function MainLayout() {
             <button
               type="button"
               onClick={handleLogout}
-              className="rounded-xl px-4 py-2 font-semibold ring-1 transition"
+              className="rounded-xl px-4 py-3 min-h-[44px] font-semibold ring-1 transition"
               style={{
                 backgroundColor: "rgba(255,255,255,0.05)",
                 color: "var(--fifa-text)",
@@ -172,7 +172,7 @@ export default function MainLayout() {
       </header>
 
       <div
-        className="md:hidden sticky top-[60px] z-10 px-4 pt-3 pb-2"
+        className="md:hidden sticky top-[56px] z-10 px-4 pt-2 pb-2"
         style={{
           background: "rgba(2,6,12,0.85)",
           backdropFilter: "blur(12px)",
@@ -187,7 +187,7 @@ export default function MainLayout() {
             <NavLink key={item.to} to={item.to} className="shrink-0">
               {({ isActive }) => (
                 <div
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all"
+                  className="flex items-center gap-2 px-4 min-h-[44px] rounded-xl text-sm font-semibold whitespace-nowrap transition-all"
                   style={{
                     background: isActive
                       ? "rgba(36,255,122,0.1)"

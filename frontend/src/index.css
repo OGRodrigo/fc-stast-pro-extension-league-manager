@@ -108,6 +108,7 @@
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2
            text-sm font-semibold px-4 py-2.5 rounded-lg
+           min-h-[44px]
            transition-all duration-150
            disabled:opacity-40 disabled:cursor-not-allowed;
     background-color: var(--fifa-neon);
@@ -122,6 +123,7 @@
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2
            text-sm font-medium px-4 py-2.5 rounded-lg
+           min-h-[44px]
            border transition-all duration-150;
     background-color: rgba(255,255,255,0.05);
     border-color: var(--fifa-line);
@@ -136,7 +138,8 @@
 
   .btn-danger {
     @apply inline-flex items-center justify-center gap-1
-           text-xs font-medium px-3 py-1.5 rounded-lg
+           text-xs font-medium px-3 py-2 rounded-lg
+           min-h-[44px]
            border transition-colors duration-150;
     color: var(--fifa-danger);
     border-color: rgba(255,77,109,.25);
@@ -149,7 +152,7 @@
   }
 
   .btn-ghost {
-    @apply transition-colors duration-150;
+    @apply transition-colors duration-150 min-h-[44px] min-w-[44px];
     color: var(--fifa-mute);
   }
 

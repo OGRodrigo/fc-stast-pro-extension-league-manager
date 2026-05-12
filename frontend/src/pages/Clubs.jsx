@@ -46,7 +46,7 @@ function ClubLogoPicker({ value, onChange, onError }) {
 
         <div className="flex flex-col gap-2">
           <label
-            className="cursor-pointer rounded-xl px-4 py-2 text-sm font-semibold transition-all"
+            className="cursor-pointer rounded-xl px-4 py-2.5 min-h-[44px] inline-flex items-center justify-center text-sm font-semibold transition-all"
             style={{
               background: "rgba(36,255,122,.10)",
               border: "1px solid rgba(36,255,122,.25)",

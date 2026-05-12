@@ -39,7 +39,7 @@ export default function Dashboard() {
         variants={heroItem}
         initial="initial"
         animate="animate"
-        className="relative overflow-hidden rounded-3xl p-7 md:p-8"
+        className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8"
         style={{
           background: "linear-gradient(135deg, rgba(10,24,34,.95), rgba(6,16,22,.92))",
           border: "1px solid rgba(36,255,122,0.12)",
@@ -71,7 +71,7 @@ export default function Dashboard() {
 
             <h1
               style={{
-                fontSize: "2.2rem",
+                fontSize: "clamp(1.5rem, 5vw, 2.2rem)",
                 lineHeight: 1,
                 fontWeight: 800,
                 color: "white",
@@ -110,7 +110,7 @@ export default function Dashboard() {
         variants={staggerGrid}
         initial="initial"
         animate="animate"
-        className="grid grid-cols-3 gap-4"
+        className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4"
       >
         <motion.div variants={statItem}>
           <StatCard label="Torneos totales" value={loading ? "—" : tournaments.length} icon={<TrophyStatIcon />} />
@@ -118,7 +118,7 @@ export default function Dashboard() {
         <motion.div variants={statItem}>
           <StatCard label="Ligas activas" value={loading ? "—" : activeCount} accent icon={<BoltStatIcon />} />
         </motion.div>
-        <motion.div variants={statItem}>
+        <motion.div variants={statItem} className="col-span-2 sm:col-span-1">
           <StatCard label="Clubes registrados" value={loading ? "—" : clubs.length} icon={<ShieldStatIcon />} />
         </motion.div>
       </motion.div>
@@ -170,7 +170,7 @@ export default function Dashboard() {
 function StatCard({ label, value, accent, icon }) {
   return (
     <div
-      className="relative overflow-hidden rounded-3xl p-5 h-full"
+      className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 h-full"
       style={{
         background: "linear-gradient(180deg, rgba(13,34,43,.88), rgba(6,16,22,.94))",
         border: `1px solid ${accent ? "rgba(36,255,122,0.18)" : "rgba(36,255,122,0.10)"}`,
@@ -187,12 +187,12 @@ function StatCard({ label, value, accent, icon }) {
       />
 
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-2">
+        <div className="min-w-0">
+          <p className="text-[10px] sm:text-[11px] text-gray-500 uppercase tracking-wider font-semibold mb-1.5 sm:mb-2 leading-tight">
             {label}
           </p>
           <p
-            className={`text-3xl font-bold tabular-nums ${accent ? "text-green-400" : "text-white"}`}
+            className={`text-2xl sm:text-3xl font-bold tabular-nums ${accent ? "text-green-400" : "text-white"}`}
             style={{ fontFamily: "var(--font-title)", letterSpacing: "0.02em" }}
           >
             {value}
@@ -201,7 +201,7 @@ function StatCard({ label, value, accent, icon }) {
 
         {icon && (
           <div
-            className="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl mt-1"
+            className="shrink-0 flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl mt-1"
             style={{
               background: accent ? "rgba(36,255,122,0.10)" : "rgba(255,255,255,0.04)",
               border: `1px solid ${accent ? "rgba(36,255,122,0.20)" : "rgba(255,255,255,0.06)"}`,

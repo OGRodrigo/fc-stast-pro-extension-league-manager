@@ -25,10 +25,10 @@ export default function TournamentShareModal({ isOpen, onClose, tournament }) {
   async function nativeShare() {
     if (!navigator.share) {
       await copyLink();
-      toast.success("Link copiado para compartir");
       return;
     }
 
+    onClose();
     try {
       await navigator.share({
         title: tournament.name,

@@ -595,7 +595,7 @@ async function handleGenerateNextPlayoffRound() {
       </button>
 
       <div
-  className="relative overflow-hidden rounded-[32px] px-7 py-7 md:px-9 md:py-8"
+  className="relative overflow-hidden rounded-2xl sm:rounded-[32px] px-4 py-5 sm:px-7 sm:py-7 md:px-9 md:py-8"
   style={{
     background:
       "linear-gradient(135deg, rgba(8,18,28,.96), rgba(5,10,16,.98))",
@@ -626,12 +626,12 @@ async function handleGenerateNextPlayoffRound() {
     }}
   />
 
-  <div className="relative z-10 flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
+  <div className="relative z-10 flex flex-col gap-5 sm:gap-7 lg:flex-row lg:items-center lg:justify-between">
     {/* LEFT */}
-    <div className="flex items-start gap-5">
+    <div className="flex items-start gap-3 sm:gap-5">
       {/* Tournament Logo */}
       <div
-        className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-3xl border"
+        className="flex h-16 w-16 sm:h-28 sm:w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:rounded-3xl border"
         style={{
           borderColor: "rgba(36,255,122,.18)",
           background:
@@ -735,7 +735,7 @@ async function handleGenerateNextPlayoffRound() {
           onClick={() => setShareOpen(true)}
           style={{
             display: "inline-flex", alignItems: "center", gap: "6px",
-            padding: "8px 14px", borderRadius: "10px",
+            padding: "10px 14px", borderRadius: "10px", minHeight: "44px",
             fontSize: "13px", fontWeight: 600,
             color: "#24ff7a",
             background: "rgba(36,255,122,.08)",
@@ -1064,7 +1064,7 @@ function ClubsTab({ tournament, tournamentClubs, clubsToAdd, onAdd, onRemove }) 
                       <td className="text-right">
                         <button
                           onClick={() => onAdd(club._id)}
-                          className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+                          className="text-xs px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-lg border transition-all"
                           style={{
                             color: "var(--fifa-neon)",
                             borderColor: "rgba(36,255,122,0.20)",
@@ -1182,7 +1182,7 @@ function VisibilityBar({ tournament, onUpdate }) {
             <>
               <button
                 onClick={() => setShareOpen(true)}
-                className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+                className="text-xs px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-lg border transition-all"
                 style={{
                   color: "var(--fifa-neon)",
                   borderColor: "rgba(36,255,122,0.30)",
@@ -1205,7 +1205,7 @@ function VisibilityBar({ tournament, onUpdate }) {
             <button
               onClick={makePublic}
               disabled={loading}
-              className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+              className="text-xs px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-lg border transition-all"
               style={{
                 color: "var(--fifa-neon)",
                 borderColor: "rgba(36,255,122,0.30)",
@@ -1497,7 +1497,7 @@ function MatchesTab({
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className="text-xs px-3 py-1.5 rounded-lg border transition-all"
+              className="text-xs px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-lg border transition-all"
               style={
                 filter === f.key
                   ? {
@@ -1646,7 +1646,7 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
 
   return (
     <div
-      className="card px-5 py-4 flex items-center gap-4 cursor-pointer"
+      className="card px-3 py-3 sm:px-5 sm:py-4 flex items-center gap-2 sm:gap-4 cursor-pointer"
       onClick={onView}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = "rgba(255,255,255,0.20)";
@@ -1685,21 +1685,21 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
+      <div className="flex flex-row items-center gap-1.5 shrink-0">
         {match.status === "scheduled" && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onMarkPlayed();
             }}
-            className="text-xs px-2.5 py-1.5 rounded-lg border transition-all whitespace-nowrap"
+            className="flex items-center justify-center min-h-[44px] min-w-[44px] px-3 rounded-lg border transition-all whitespace-nowrap text-xs"
             style={{
               color: "var(--fifa-neon)",
               borderColor: "rgba(36,255,122,0.20)",
               backgroundColor: "rgba(36,255,122,0.06)",
             }}
           >
-            ✓ <span className="hidden sm:inline">Jugado</span>
+            ✓ <span className="hidden sm:inline ml-1">Jugado</span>
           </button>
         )}
 
@@ -1708,7 +1708,7 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
             e.stopPropagation();
             onEdit();
           }}
-          className="text-xs px-2.5 py-1.5 rounded-lg border transition-colors whitespace-nowrap"
+          className="flex items-center justify-center min-h-[44px] min-w-[44px] px-3 rounded-lg border transition-colors whitespace-nowrap text-xs"
           style={{
             color: "var(--fifa-mute)",
             borderColor: "var(--fifa-line)",
@@ -1717,7 +1717,7 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
         >
           <span className="hidden sm:inline">Editar</span>
           <span className="sm:hidden">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
             </svg>
           </span>
@@ -1728,11 +1728,16 @@ function MatchRow({ match, onDelete, onEdit, onMarkPlayed, onView }) {
             e.stopPropagation();
             onDelete();
           }}
-          className="btn-danger whitespace-nowrap"
+          className="flex items-center justify-center min-h-[44px] min-w-[44px] px-3 rounded-lg border transition-colors text-xs whitespace-nowrap"
+          style={{
+            color: "var(--fifa-danger)",
+            borderColor: "rgba(255,77,109,.25)",
+            backgroundColor: "rgba(255,77,109,.06)",
+          }}
         >
           <span className="hidden sm:inline">Eliminar</span>
           <span className="sm:hidden">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
             </svg>
           </span>
@@ -2642,7 +2647,7 @@ function removeLogo() {
 
       <div className="mt-3 flex flex-wrap gap-2">
         <label
-          className="text-xs px-3 py-1.5 rounded-lg border cursor-pointer transition-all"
+          className="text-xs px-3 py-2.5 min-h-[44px] inline-flex items-center justify-center rounded-lg border cursor-pointer transition-all"
           style={{
             color: "var(--fifa-neon)",
             borderColor: "rgba(36,255,122,.30)",
@@ -3210,26 +3215,26 @@ function LeagueTable({ table, playoffTeams, champion }) {
           )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[380px] text-left text-sm">
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+          <table className="w-full min-w-[280px] text-left text-sm">
             <thead>
               <tr style={{ backgroundColor: "rgba(0,0,0,0.35)" }}>
-                <th className="w-8 px-3 py-3 text-[11px] uppercase tracking-wider text-gray-500">
+                <th className="w-7 px-2 sm:px-3 py-3 text-[11px] uppercase tracking-wider text-gray-500">
                   #
                 </th>
-                <th className="px-3 py-3 text-[11px] uppercase tracking-wider text-gray-500">
+                <th className="px-2 sm:px-3 py-3 text-[11px] uppercase tracking-wider text-gray-500">
                   Club
                 </th>
-                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                <th className="px-1.5 sm:px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
                   PJ
                 </th>
-                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                <th className="px-1.5 sm:px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
                   G
                 </th>
-                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                <th className="hidden xs:table-cell px-1.5 sm:px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
                   E
                 </th>
-                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                <th className="hidden xs:table-cell px-1.5 sm:px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
                   P
                 </th>
                 <th className="hidden sm:table-cell px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
@@ -3238,10 +3243,10 @@ function LeagueTable({ table, playoffTeams, champion }) {
                 <th className="hidden sm:table-cell px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
                   GC
                 </th>
-                <th className="px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
+                <th className="hidden sm:table-cell px-2 py-3 text-center text-[11px] uppercase tracking-wider text-gray-500">
                   DG
                 </th>
-                <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-white">
+                <th className="px-2 sm:px-3 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-white">
                   PTS
                 </th>
               </tr>
@@ -3274,7 +3279,7 @@ function LeagueTable({ table, playoffTeams, champion }) {
                         : undefined,
                     }}
                   >
-                    <td className="px-3 py-3">
+                    <td className="px-2 sm:px-3 py-2.5 sm:py-3">
                       <span
                         className={`text-sm font-black tabular-nums ${
                           POS_COLOR[index] ?? "text-gray-500"
@@ -3284,20 +3289,23 @@ function LeagueTable({ table, playoffTeams, champion }) {
                       </span>
                     </td>
 
-                    <td className="px-3 py-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <ClubAvatar
-                          name={row.club.name}
-                          logo={row.club.logo}
-                          small
-                        />
+                    <td className="px-2 sm:px-3 py-2.5 sm:py-3">
+                      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                        <div className="hidden sm:block shrink-0">
+                          <ClubAvatar
+                            name={row.club.name}
+                            logo={row.club.logo}
+                            small
+                          />
+                        </div>
 
                         <div className="min-w-0">
-                          <p className="truncate font-semibold text-gray-100">
-                            {row.club.name}
+                          <p className="truncate font-semibold text-gray-100 text-xs sm:text-sm">
+                            <span className="hidden sm:inline">{row.club.name}</span>
+                            <span className="sm:hidden">{row.club.abbr || row.club.name}</span>
                           </p>
 
-                          <div className="mt-0.5 flex items-center gap-2">
+                          <div className="mt-0.5 hidden sm:flex items-center gap-2">
                             {row.club.abbr && (
                               <span className="text-[11px] font-bold text-green-400">
                                 {row.club.abbr}
@@ -3320,16 +3328,16 @@ function LeagueTable({ table, playoffTeams, champion }) {
                       </div>
                     </td>
 
-                    <td className="px-2 py-3 text-center text-gray-400 tabular-nums">
+                    <td className="px-1.5 sm:px-2 py-2.5 sm:py-3 text-center text-gray-400 tabular-nums text-xs sm:text-sm">
                       {row.played}
                     </td>
-                    <td className="px-2 py-3 text-center text-gray-400 tabular-nums">
+                    <td className="px-1.5 sm:px-2 py-2.5 sm:py-3 text-center text-gray-400 tabular-nums text-xs sm:text-sm">
                       {row.wins}
                     </td>
-                    <td className="px-2 py-3 text-center text-gray-400 tabular-nums">
+                    <td className="hidden xs:table-cell px-1.5 sm:px-2 py-2.5 sm:py-3 text-center text-gray-400 tabular-nums text-xs sm:text-sm">
                       {row.draws}
                     </td>
-                    <td className="px-2 py-3 text-center text-gray-400 tabular-nums">
+                    <td className="hidden xs:table-cell px-1.5 sm:px-2 py-2.5 sm:py-3 text-center text-gray-400 tabular-nums text-xs sm:text-sm">
                       {row.losses}
                     </td>
                     <td className="hidden sm:table-cell px-2 py-3 text-center text-gray-400 tabular-nums">
@@ -3339,7 +3347,7 @@ function LeagueTable({ table, playoffTeams, champion }) {
                       {row.goalsAgainst}
                     </td>
                     <td
-                      className={`px-2 py-3 text-center font-semibold tabular-nums ${
+                      className={`hidden sm:table-cell px-2 py-3 text-center font-semibold tabular-nums ${
                         diff > 0
                           ? "text-green-400"
                           : diff < 0

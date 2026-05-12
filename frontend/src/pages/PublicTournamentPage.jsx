@@ -117,8 +117,7 @@ export default function PublicTournamentPage() {
         }} />
 
         <div
-          className="max-w-6xl mx-auto w-full px-4 sm:px-6"
-          className="pt-10 pb-12 sm:pt-16 sm:pb-[4.5rem]"
+          className="max-w-6xl mx-auto w-full px-4 sm:px-6 pt-10 pb-12 sm:pt-16 sm:pb-[4.5rem]"
           style={{ position: "relative", zIndex: 1 }}
         >
           <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-6 sm:gap-8">
