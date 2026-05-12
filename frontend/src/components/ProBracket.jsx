@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { QRCodeSVG as QRCode } from "react-qr-code";
+import { QRCode } from "react-qr-code";
 import ClubAvatar from "./ui/ClubAvatar";
 
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { QRCodeSVG } from "react-qr-code";
+import { QRCode as QRCodeSVG } from "react-qr-code";
 import { publicApi } from "../api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
