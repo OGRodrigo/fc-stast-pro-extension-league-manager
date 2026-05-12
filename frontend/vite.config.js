@@ -11,6 +11,7 @@ export default defineConfig({
       includeAssets: [
         "favicon-32x32.png",
         "apple-touch-icon.png",
+        "pwa-64x64.png",
         "pwa-192x192.png",
         "pwa-512x512.png",
         "maskable-icon-512x512.png",
@@ -63,7 +64,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,svg,woff,woff2}", "pwa-*.png", "apple-touch-icon.png", "maskable-icon-512x512.png"],
+        globPatterns: ["**/*.{js,css,html,ico,svg,woff,woff2}"],
         globIgnores: ["**/images/**", "assets/logo-league-manager-*.png"],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: "/index.html",
