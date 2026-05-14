@@ -1,258 +1,327 @@
-# FC Stats Pro League Manager 🏆
+<div align="center">
 
-Sistema integral de gestión de ligas de fútbol con análisis avanzado de partidos mediante IA y OCR. Permite crear torneos, gestionar clubes, registrar resultados y generar estadísticas en tiempo real.
+# FC Stats Pro — League Manager
 
-**Versión:** 1.0.0 (Beta)  
-**Stack:** Node.js + Express + React + MongoDB  
-**Autor:** Rodrigo  
-**Licencia:** ISC
+**Full-stack platform for managing football leagues, tournaments, and real-time standings**
 
----
+![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=flat-square&logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
+![MongoDB](https://img.shields.io/badge/MongoDB-8-47A248?style=flat-square&logo=mongodb&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![License](https://img.shields.io/badge/License-ISC-blue?style=flat-square)
+![Version](https://img.shields.io/badge/Version-1.0.0-brightgreen?style=flat-square)
 
-## 🎯 Características principales
-
-### Backend
-- **Gestión completa de torneos**: Crear, editar, eliminar y publicar ligas
-- **Administración de clubes**: Crear equipos con escudos, gestionar plantillas
-- **Registro de partidos**: Ingreso manual o por importación de imágenes
-- **OCR inteligente**: Extracción automática de datos de fotos de marcadores
-- **Tablas dinámicas**: Cálculo automático de puntos, diferencia de gol, etc.
-- **Brackets automáticos**: Generación de playoff trees para competiciones
-- **API REST segura**: Autenticación JWT, rate limiting, validaciones
-
-### Frontend
-- **Dashboard intuitivo**: Visualización de ligas, resultados y estadísticas
-- **Gestor de partidos**: Interfaz para crear y editar encuentros
-- **Importación visual**: Captura de imágenes de marcadores y extracción de datos
-- **Páginas públicas**: Compartir torneos con enlaces públicos
-- **Responsive design**: Optimizado para desktop y móvil
-- **Animaciones fluidas**: UX moderna con Framer Motion
-
-### Seguridad
-- Helmet.js para headers HTTP seguros
-- Rate limiting en endpoints críticos
-- JWT con expiración configurable
-- Validación de entrada en todas las rutas
-- CORS configurado por dominio
-- Contraseñas hasheadas con bcryptjs
+</div>
 
 ---
 
-## 🚀 Quick Start
+## Overview
 
-### Requisitos previos
-- Node.js 16+
-- MongoDB (atlas o local)
-- npm o yarn
+FC Stats Pro is a complete league management system for amateur and semi-professional football competitions. Administrators can create tournaments, manage clubs, register match results, and share live standings with players and fans — all through a clean, responsive web interface.
 
-### Instalación
+The platform integrates **AI-powered image recognition** to extract match scores directly from scoreboard photos, eliminating manual data entry after each game.
+
+---
+
+## Features
+
+### League Management
+- Create and manage multiple tournaments simultaneously (leagues, cups, mixed formats)
+- Automatic standings table with real-time recalculation of points, goal difference, and head-to-head rules
+- Automatic bracket generation for knockout stages and playoffs
+- Configurable tournament visibility — private or publicly shareable via URL
+
+### Club Administration
+- Full CRUD for clubs with custom logo upload
+- Club assignment to tournaments with squad management
+- Visual team cards with branding
+
+### Match Registration
+- Manual score entry with validation
+- **AI/OCR import** — photograph a scoreboard, the system extracts teams and scores automatically
+- Confidence scoring on extracted data with manual review step
+- Match history and edit/delete capabilities
+
+### Public Pages
+- Each tournament has a public URL (`/public/tournaments/:slug`) shareable with fans
+- Open Graph meta tags for rich previews on WhatsApp, Twitter, and Facebook
+- QR code generation for easy mobile access
+- Tournament bracket viewer for playoff rounds
+
+### Progressive Web App
+- Installable on mobile devices (Android/iOS)
+- Optimized icons and splash screens
+- Service worker caching for offline viewing of standings
+
+### Security
+- JWT authentication with configurable expiration
+- Helmet.js for secure HTTP headers
+- Rate limiting on all critical endpoints
+- CORS domain whitelist
+- bcrypt password hashing
+- Input validation on every route
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Backend** | Node.js 20, Express 5 |
+| **Database** | MongoDB 8 + Mongoose 8 |
+| **Frontend** | React 18, Vite 5 |
+| **Styling** | Tailwind CSS 3, Framer Motion |
+| **Auth** | JSON Web Tokens (JWT) |
+| **AI / OCR** | Azure Computer Vision, OpenAI GPT-4o-mini |
+| **Email** | Nodemailer (SMTP) |
+| **File Upload** | Multer |
+| **Security** | Helmet.js, express-rate-limit |
+| **PWA** | vite-plugin-pwa, Workbox |
+| **Deployment** | Render (backend), static hosting (frontend) |
+
+---
+
+## Project Structure
+
+```
+fc-stats-pro-league-manager/
+├── src/                        # Backend (Express API)
+│   ├── config/                 # Database connection and env config
+│   ├── controllers/            # Request handlers (auth, clubs, matches, AI)
+│   ├── middlewares/            # JWT auth, rate limiter, file upload
+│   ├── models/                 # Mongoose schemas (Tournament, Club, Match, Admin)
+│   ├── routes/                 # Route definitions
+│   │   ├── auth.routes.js
+│   │   ├── tournament.routes.js
+│   │   ├── club.routes.js
+│   │   ├── match.routes.js
+│   │   ├── table.routes.js
+│   │   ├── public.routes.js
+│   │   └── ai.routes.js
+│   ├── services/               # AI/OCR pipeline services
+│   └── utils/                  # Helpers and shared utilities
+├── frontend/                   # React + Vite SPA
+│   └── src/
+│       ├── pages/              # Route-level page components
+│       ├── components/         # Reusable UI components
+│       ├── auth/               # Auth context and protected routes
+│       ├── api/                # Axios client and API calls
+│       └── assets/             # Static assets
+├── docs/                       # Extended documentation
+├── render.yaml                 # Render deployment config
+└── package.json
+```
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- MongoDB (Atlas or local)
+- npm or yarn
+
+### Installation
 
 ```bash
-# Clonar repositorio
-git clone <repo-url>
+# Clone the repository
+git clone https://github.com/your-username/fc-stats-pro-league-manager.git
 cd fc-stats-pro-league-manager
 
-# Instalar dependencias backend
+# Install backend dependencies
 npm install
 
-# Instalar dependencias frontend
-cd frontend
-npm install
-cd ..
+# Install frontend dependencies
+cd frontend && npm install && cd ..
 
-# Configurar variables de entorno
+# Configure environment variables
 cp .env.example .env
-# Editar .env con tus credenciales
+# Fill in your values (see Environment Variables section below)
 ```
 
-### Desarrollo
+### Development
 
 ```bash
-# Terminal 1: Backend (http://localhost:3000)
+# Terminal 1 — Backend (http://localhost:3000)
 npm run dev
 
-# Terminal 2: Frontend (http://localhost:5173)
+# Terminal 2 — Frontend (http://localhost:5173)
 cd frontend
 npm run dev
 ```
 
-### Producción
+### Production Build
 
 ```bash
 # Backend
 npm start
 
 # Frontend
-cd frontend
-npm run build
+cd frontend && npm run build
 ```
 
 ---
 
-## 📁 Estructura del proyecto
+## Environment Variables
 
-```
-fc-stats-pro-league-manager/
-├── src/                          # Backend
-│   ├── config/                   # Configuraciones (DB, etc.)
-│   ├── controllers/              # Lógica de negocios
-│   ├── models/                   # Esquemas MongoDB
-│   ├── routes/                   # Definición de endpoints
-│   ├── middlewares/              # Auth, rate limit, upload
-│   ├── services/                 # Servicios AI y utilidades
-│   │   └── ai/                   # OCR, clasificación, normalización
-│   └── utils/                    # Funciones auxiliares
-├── frontend/                     # React + Vite
-│   ├── src/
-│   │   ├── pages/                # Componentes de página
-│   │   ├── components/           # Componentes reutilizables
-│   │   ├── auth/                 # Contexto y rutas protegidas
-│   │   ├── api/                  # Cliente Axios
-│   │   └── assets/               # Imágenes, logos, etc.
-│   ├── index.html
-│   └── vite.config.js
-├── .env                          # Variables de entorno
-└── package.json
-```
+```env
+# Database
+MONGO_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/fcstats
 
----
+# Auth
+JWT_SECRET=<minimum 32 characters>
+JWT_EXPIRES_IN=7d
 
-## 🔌 API REST
+# CORS (comma-separated)
+CLIENT_URL=http://localhost:5173,https://app.yourdomain.com
+FRONTEND_URL=https://app.yourdomain.com
 
-Documentación completa en [API.md](./API.md)
+# AI / OCR
+AZURE_VISION_ENDPOINT=https://<resource>.cognitiveservices.azure.com/
+AZURE_VISION_KEY=<key>
+AZURE_VISION_API_VERSION=2023-10-01
+OPENAI_API_KEY=sk-...
 
-### Endpoints principales
+# AI confidence thresholds
+AI_SCORE_CONFIDENCE_MIN=0.85
+AI_STATS_CONFIDENCE_MIN=0.70
+AI_IMPORT_MAX_IMAGES=10
 
-**Autenticación**
-- `POST /auth/register` - Crear cuenta
-- `POST /auth/login` - Iniciar sesión
-- `POST /auth/refresh` - Renovar token
+# Email (SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=your@email.com
+SMTP_PASS=<app password>
+SMTP_FROM=FC Stats Pro <your@email.com>
 
-**Torneos**
-- `GET /tournaments` - Listar mis torneos
-- `POST /tournaments` - Crear torneo
-- `GET /tournaments/:id` - Detalle de torneo
-- `PUT /tournaments/:id` - Editar torneo
-- `DELETE /tournaments/:id` - Eliminar torneo
-
-**Clubes**
-- `GET /clubs` - Listar clubes
-- `POST /clubs` - Crear club
-- `PUT /clubs/:id` - Editar club
-- `DELETE /clubs/:id` - Eliminar club
-
-**Partidos**
-- `GET /matches` - Listar partidos
-- `POST /matches` - Registrar partido
-- `PUT /matches/:id` - Actualizar resultado
-- `DELETE /matches/:id` - Eliminar partido
-
-**IA/OCR**
-- `POST /ai/import-image` - Procesar imagen de marcador
-- `POST /ai/validate` - Validar datos extraídos
-
-**Público**
-- `GET /public/tournaments/:slug` - Ver torneo público
-- `GET /public/tournaments/:slug/stats` - Estadísticas públicas
-
----
-
-## ⚙️ Configuración
-
-Ver [.env.example](./.env.example) para todas las variables disponibles.
-
-### Variables críticas
-
-```
-# Base de datos
-MONGO_URI=mongodb+srv://...
-JWT_SECRET=<mínimo 32 caracteres>
-
-# URLs permitidas (CORS)
-CLIENT_URL=http://localhost:5173,https://app.example.com
-
-# AI/OCR
-AZURE_VISION_KEY=<key de Azure Computer Vision>
-OPENAI_API_KEY=<key de OpenAI>
-
-# Email
-SMTP_USER=<email>
-SMTP_PASS=<password app>
+# Server
+PORT=3000
+NODE_ENV=production
 ```
 
 ---
 
-## 📖 Documentación completa
+## API Reference
 
-- **[INSTALLATION.md](./docs/INSTALLATION.md)** - Guía detallada de instalación
-- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Arquitectura técnica y decisiones
-- **[API.md](./docs/API.md)** - Referencia completa de endpoints
-- **[AI_PIPELINE.md](./docs/AI_PIPELINE.md)** - Cómo funciona la extracción OCR
-- **[DEPLOYMENT.md](./docs/DEPLOYMENT.md)** - Guía de despliegue en producción
-- **[CONTRIBUTING.md](./docs/CONTRIBUTING.md)** - Cómo contribuir al proyecto
+All protected endpoints require `Authorization: Bearer <token>`.
 
----
+### Authentication
 
-## 🛠️ Stack tecnológico
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/auth/register` | Create account |
+| `POST` | `/auth/login` | Login and receive JWT |
+| `POST` | `/auth/forgot-password` | Send password reset email |
+| `POST` | `/auth/reset-password` | Reset password with token |
 
-### Backend
-- **Express.js** - Framework web
-- **MongoDB + Mongoose** - Base de datos
-- **JWT** - Autenticación
-- **Helmet.js** - Seguridad HTTP
-- **Azure Computer Vision** - OCR
-- **OpenAI API** - Validación de datos
-- **Multer** - Procesamiento de archivos
-- **Nodemailer** - Envío de emails
+### Tournaments
 
-### Frontend
-- **React 18** - UI framework
-- **Vite** - Build tool
-- **React Router** - Navegación
-- **Axios** - Cliente HTTP
-- **Tailwind CSS** - Estilos
-- **Framer Motion** - Animaciones
-- **react-qr-code** - Códigos QR
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/tournaments` | List my tournaments |
+| `POST` | `/tournaments` | Create tournament |
+| `GET` | `/tournaments/:id` | Get tournament detail |
+| `PUT` | `/tournaments/:id` | Update tournament |
+| `DELETE` | `/tournaments/:id` | Delete tournament |
 
----
+### Clubs
 
-## 🧪 Testing
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/clubs` | List clubs |
+| `POST` | `/clubs` | Create club (with logo upload) |
+| `PUT` | `/clubs/:id` | Update club |
+| `DELETE` | `/clubs/:id` | Delete club |
 
-```bash
-# Backend
-npm test
+### Matches
 
-# Frontend
-cd frontend
-npm test
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/matches` | List matches |
+| `POST` | `/matches` | Create match |
+| `PUT` | `/matches/:id` | Update result |
+| `DELETE` | `/matches/:id` | Delete match |
 
----
+### Standings & Brackets
 
-## 🐛 Issues y soporte
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/table/:tournamentId` | Get live standings |
+| `GET` | `/tournaments/:id/bracket` | Get bracket data |
 
-Para reportar bugs o sugerir mejoras:
-- Abre un [GitHub Issue](https://github.com/tu-repo/issues)
-- Contacta a: darkscencia@gmail.com
+### AI / OCR
 
----
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/ai/import-image` | Extract match data from image |
+| `POST` | `/ai/validate` | Validate AI-extracted data |
 
-## 📄 Licencia
+### Public (no auth required)
 
-ISC © 2024 Rodrigo
-
----
-
-## 🎓 Próximas mejoras (Roadmap)
-
-- [ ] Sistema de notificaciones en tiempo real (WebSockets)
-- [ ] Estadísticas avanzadas y gráficos
-- [ ] Aplicación móvil nativa
-- [ ] Sistema de chat entre administradores
-- [ ] Integración con redes sociales
-- [ ] Análisis de desempeño de jugadores
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/public/tournaments/:slug` | Public tournament view |
+| `GET` | `/public/tournaments/:slug/standings` | Public standings |
+| `GET` | `/public/tournaments/:slug/bracket` | Public bracket |
 
 ---
 
-**¿Preguntas o sugerencias?** Contacta al equipo de desarrollo.
+## AI / OCR Pipeline
 
+1. User uploads a photo of a scoreboard via the "Import Match" screen
+2. Image is sent to **Azure Computer Vision** for text extraction
+3. Extracted text is parsed and structured by a custom normalization layer
+4. **OpenAI GPT-4o-mini** validates the team names against the tournament's registered clubs
+5. A confidence score is calculated — results above the threshold are pre-filled in the form
+6. The user reviews and confirms before saving
+
+This flow eliminates typos and speeds up match registration for league administrators managing high match volumes.
+
+---
+
+## Deployment
+
+The backend is configured for **Render** via `render.yaml`. Set the required environment variables in the Render dashboard (they are not synced automatically — marked `sync: false` in the config).
+
+For the frontend, run `npm run build` inside `/frontend` and deploy the generated `/dist` folder to any static hosting provider (Vercel, Netlify, Cloudflare Pages, etc.).
+
+Full deployment guide: [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md)
+
+---
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [`docs/INSTALLATION.md`](./docs/INSTALLATION.md) | Step-by-step local setup guide |
+| [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | System design and technical decisions |
+| [`docs/API.md`](./docs/API.md) | Full API reference |
+| [`docs/AI_PIPELINE.md`](./docs/AI_PIPELINE.md) | OCR pipeline internals |
+| [`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) | Production deployment guide |
+| [`CHANGELOG.md`](./CHANGELOG.md) | Version history |
+| [`ROADMAP.md`](./ROADMAP.md) | Planned features and milestones |
+
+---
+
+## Roadmap Highlights
+
+- [ ] Real-time notifications via WebSockets
+- [ ] Per-player statistics and performance tracking
+- [ ] Advanced analytics with charts and trends
+- [ ] Mobile app (React Native) with built-in OCR camera
+- [ ] PDF/Excel export of final standings
+- [ ] Social sharing with auto-generated match images
+
+---
+
+## License
+
+ISC © 2025 Rodrigo
+
+---
+
+<div align="center">
+  Built with Node.js, React, and MongoDB
+</div>
